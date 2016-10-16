@@ -42,7 +42,16 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { rocket = { x = 500, y = 500, d = 0, s = 2 }, score = 0, keys = Set.empty }, Cmd.none )
+    ({
+        rocket =
+            { x = 500
+            , y = 500
+            , d = 0
+            , s = 2
+            }
+        , score = 0
+        , keys = Set.empty
+    }, Cmd.none )
 
 
 
@@ -60,8 +69,8 @@ update msg ({ rocket } as model) =
         Tick _ ->
             ( { model | rocket =
                 { rocket |
-                  s = (accelerateBy rocket.s model.keys)
-                , d = (turnBy rocket.d model.keys)
+                  s = (accelerateRocket rocket.s model.keys)
+                , d = (turnRocket rocket.d model.keys)
                 , x = (moveX rocket)
                 , y = (moveY rocket)
                 }
@@ -69,27 +78,33 @@ update msg ({ rocket } as model) =
             )
 
         KeyDownMsg k ->
-            ( { model | keys = (keyDown k model.keys) }, Cmd.none )
+            ({ model | keys = (addKey k model.keys) }, Cmd.none )
 
         KeyUpMsg k ->
-            ( { model | keys = (keyUp k model.keys) }, Cmd.none )
+            ({ model | keys = (removeKey k model.keys) }, Cmd.none )
 
-keyDown : Int -> Set String -> Set String
-keyDown k keys =
+addKey : Int -> Set String -> Set String
+addKey k keys =
     Set.insert (fromChar <| fromCode <| k) keys
 
-keyUp : Int -> Set String -> Set String
-keyUp k keys =
+removeKey : Int -> Set String -> Set String
+removeKey k keys =
     Set.remove (fromChar <| fromCode <| k) keys
 
+-- Check if a key is being pressed
+-- Usage: if keys ?? "D" then
 (??) : Set String -> String -> Bool
 (??) keys k =
-  Set.member k keys
-
+    Set.member k keys
 infixr 9 ??
 
-accelerateBy : Float -> Set String -> Float
-accelerateBy s keys =
+-- toString is too long. :-P
+-- and where's Elm's interpolation?
+str : a -> String
+str = toString
+
+accelerateRocket : Float -> Set String -> Float
+accelerateRocket s keys =
     if keys ?? "W" then
         clamp 1 10 s + 0.1
     else if keys ?? "S" then
@@ -97,8 +112,8 @@ accelerateBy s keys =
     else
         s
 
-turnBy : Float -> Set String -> Float
-turnBy d keys =
+turnRocket : Float -> Set String -> Float
+turnRocket d keys =
     if keys ?? "A" then
         d - 0.01
     else if keys ?? "D" then
@@ -127,30 +142,38 @@ subscriptions _ =
         ]
 
 
-
 -- VIEW
 
 
 view : Model -> Html Msg
 view model =
-    div [ width "1000", height "1000" ] [
-      svg [ viewBox "0 0 1000 1000", width "600px" ]
-          [ rect [ x "0", y "0", width "1000", height "1000", fill "#0B79CE" ] []
-          , rocketView model
-          ]
-      , p [] [ text (toString model) ]
-      , p [] [ text (toString (sin (turns model.rocket.d))) ]
-      , p [] [ text (toString (cos (turns model.rocket.d))) ]
-    ]
+    div [ width "1000", height "1000" ]
+        [ gameView model
+        , debugView model
+        ]
 
+gameView : Model -> Html msg
+gameView model =
+    svg [ viewBox "0 0 1000 1000", width "600px" ]
+        [ backgroundView
+        , rocketView model
+        ]
+
+debugView : Model -> Html msg
+debugView model =
+    p [] [ text (str model) ]
+
+backgroundView : Html msg
+backgroundView =
+    rect [ x "0", y "0", width "1000", height "1000", fill "#0B79CE" ] []
 
 rocketView : Model -> Html msg
 rocketView ({rocket, keys} as model) =
     let
         r = rocket
-        angle = toString (r.d * 360)
-        rx = toString (r.x - 20)
-        ry = toString (r.y - 20)
+        angle = str (r.d * 360)
+        rx = str (r.x - 20)
+        ry = str (r.y - 20)
 
         rocketImg = if keys ?? "W" then
                         "rocket-burn.svg"
@@ -158,9 +181,17 @@ rocketView ({rocket, keys} as model) =
                         "rocket.svg"
 
         transforms =
-            "rotate(" ++ angle
-            ++ " " ++ toString(r.x)
-            ++ " " ++ toString(r.y)
+            "rotate("
+            ++ angle
+            ++ " " ++ str(r.x)
+            ++ " " ++ str(r.y)
             ++ ")"
     in
-        image [ x rx, y ry, width "40", height "40", xlinkHref rocketImg, transform transforms ] []
+        image
+          [ x rx
+          , y ry
+          , width "40"
+          , height "40"
+          , xlinkHref rocketImg
+          , transform transforms
+          ] []
