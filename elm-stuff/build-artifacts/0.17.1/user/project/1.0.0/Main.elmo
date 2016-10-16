@@ -1,0 +1,126 @@
+var _user$project$Main$rocketView = function (r) {
+	var ry = _elm_lang$core$Basics$toString(r.y - 20);
+	var rx = _elm_lang$core$Basics$toString(r.x - 20);
+	var angle = _elm_lang$core$Basics$toString(r.d);
+	var transforms = A2(
+		_elm_lang$core$Basics_ops['++'],
+		'rotate(',
+		A2(
+			_elm_lang$core$Basics_ops['++'],
+			angle,
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				' ',
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Basics$toString(r.x),
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						' ',
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							_elm_lang$core$Basics$toString(r.y),
+							')'))))));
+	return A2(
+		_elm_lang$svg$Svg$image,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$svg$Svg_Attributes$x(rx),
+				_elm_lang$svg$Svg_Attributes$y(ry),
+				_elm_lang$svg$Svg_Attributes$width('40'),
+				_elm_lang$svg$Svg_Attributes$height('40'),
+				_elm_lang$svg$Svg_Attributes$xlinkHref('method-draw-image.svg'),
+				_elm_lang$svg$Svg_Attributes$transform(transforms)
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[]));
+};
+var _user$project$Main$view = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$svg$Svg_Attributes$width('1000'),
+				_elm_lang$svg$Svg_Attributes$height('1000')
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$svg$Svg$svg,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$svg$Svg_Attributes$viewBox('0 0 1000 1000'),
+						_elm_lang$svg$Svg_Attributes$width('600px')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$svg$Svg$rect,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$svg$Svg_Attributes$x('0'),
+								_elm_lang$svg$Svg_Attributes$y('0'),
+								_elm_lang$svg$Svg_Attributes$width('1000'),
+								_elm_lang$svg$Svg_Attributes$height('1000'),
+								_elm_lang$svg$Svg_Attributes$fill('#0B79CE')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[])),
+						_user$project$Main$rocketView(model.rocket)
+					])),
+				A2(
+				_elm_lang$html$Html$p,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text(
+						_elm_lang$core$Basics$toString(model))
+					]))
+			]));
+};
+var _user$project$Main$update = F2(
+	function (msg, _p0) {
+		var _p1 = _p0;
+		var _p3 = _p1.rocket;
+		var _p2 = msg;
+		return {
+			ctor: '_Tuple2',
+			_0: _elm_lang$core$Native_Utils.update(
+				_p1,
+				{
+					rocket: _elm_lang$core$Native_Utils.update(
+						_p3,
+						{
+							d: A2(_elm_lang$core$Basics_ops['%'], _p3.d + 10, 360)
+						})
+				}),
+			_1: _elm_lang$core$Platform_Cmd$none
+		};
+	});
+var _user$project$Main$init = {
+	ctor: '_Tuple2',
+	_0: {
+		rocket: {x: 50, y: 50, d: 0, s: 0},
+		score: 0
+	},
+	_1: _elm_lang$core$Platform_Cmd$none
+};
+var _user$project$Main$Rocket = F4(
+	function (a, b, c, d) {
+		return {x: a, y: b, d: c, s: d};
+	});
+var _user$project$Main$Model = F2(
+	function (a, b) {
+		return {rocket: a, score: b};
+	});
+var _user$project$Main$Tick = function (a) {
+	return {ctor: 'Tick', _0: a};
+};
+var _user$project$Main$subscriptions = function (_p4) {
+	return A2(_elm_lang$core$Time$every, 100 * _elm_lang$core$Time$millisecond, _user$project$Main$Tick);
+};
+var _user$project$Main$main = {
+	main: _elm_lang$html$Html_App$program(
+		{init: _user$project$Main$init, view: _user$project$Main$view, update: _user$project$Main$update, subscriptions: _user$project$Main$subscriptions})
+};
