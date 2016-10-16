@@ -64,13 +64,13 @@ type Msg
     | KeyUpMsg Keyboard.KeyCode
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ({ rocket } as model) =
+update msg ({ rocket, keys } as model) =
     case msg of
         Tick _ ->
             ( { model | rocket =
                 { rocket |
-                  s = (accelerateRocket rocket.s model.keys)
-                , d = (turnRocket rocket.d model.keys)
+                  s = (accelerateRocket rocket.s keys)
+                , d = (turnRocket rocket.d keys)
                 , x = (moveX rocket)
                 , y = (moveY rocket)
                 }
@@ -78,10 +78,10 @@ update msg ({ rocket } as model) =
             )
 
         KeyDownMsg k ->
-            ({ model | keys = (addKey k model.keys) }, Cmd.none )
+            ({ model | keys = (addKey k keys) }, Cmd.none )
 
         KeyUpMsg k ->
-            ({ model | keys = (removeKey k model.keys) }, Cmd.none )
+            ({ model | keys = (removeKey k keys) }, Cmd.none )
 
 addKey : Int -> Set String -> Set String
 addKey k keys =
