@@ -1,0 +1,33 @@
+[
+  {
+    "name": "Keyboard",
+    "comment": " This library lets you listen to global keyboard events.\n\n# Key Codes\n@docs KeyCode\n\n# Subscriptions\n@docs presses, downs, ups\n\n",
+    "aliases": [
+      {
+        "name": "KeyCode",
+        "comment": " Keyboard keys can be represented as integers. These are called *key codes*.\nYou can use [`toCode`](http://package.elm-lang.org/packages/elm-lang/core/latest/Char#toCode)\nand [`fromCode`](http://package.elm-lang.org/packages/elm-lang/core/latest/Char#fromCode)\nto convert between key codes and characters.\n",
+        "args": [],
+        "type": "Int"
+      }
+    ],
+    "types": [],
+    "values": [
+      {
+        "name": "downs",
+        "comment": " Subscribe to get codes whenever a key goes down.\n",
+        "type": "(Keyboard.KeyCode -> msg) -> Platform.Sub.Sub msg"
+      },
+      {
+        "name": "presses",
+        "comment": " Subscribe to all key presses.\n",
+        "type": "(Keyboard.KeyCode -> msg) -> Platform.Sub.Sub msg"
+      },
+      {
+        "name": "ups",
+        "comment": " Subscribe to get codes whenever a key goes up.\n",
+        "type": "(Keyboard.KeyCode -> msg) -> Platform.Sub.Sub msg"
+      }
+    ],
+    "generated-with-elm-version": "0.17.0"
+  }
+]

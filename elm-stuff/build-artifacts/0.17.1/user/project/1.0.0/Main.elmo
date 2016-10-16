@@ -1,7 +1,33 @@
-var _user$project$Main$rocketView = function (r) {
-	var ry = _elm_lang$core$Basics$toString(r.y - 20);
+var _user$project$Main$moveY = function (_p0) {
+	var _p1 = _p0;
+	return A3(_elm_lang$core$Basics$clamp, 0, 1000, _p1.y) + (_p1.s * _elm_lang$core$Basics$sin(
+		_elm_lang$core$Basics$turns(_p1.d - 0.25)));
+};
+var _user$project$Main$moveX = function (_p2) {
+	var _p3 = _p2;
+	return A3(_elm_lang$core$Basics$clamp, 0, 1000, _p3.x) + (_p3.s * _elm_lang$core$Basics$cos(
+		_elm_lang$core$Basics$turns(_p3.d - 0.25)));
+};
+var _user$project$Main_ops = _user$project$Main_ops || {};
+_user$project$Main_ops['??'] = F2(
+	function (keys, k) {
+		return A2(_elm_lang$core$Set$member, k, keys);
+	});
+var _user$project$Main$accelerateBy = F2(
+	function (s, keys) {
+		return A2(_user$project$Main_ops['??'], keys, 'W') ? (A3(_elm_lang$core$Basics$clamp, 1, 10, s) + 0.1) : (A2(_user$project$Main_ops['??'], keys, 'S') ? (A3(_elm_lang$core$Basics$clamp, 1, 10, s) - 0.1) : s);
+	});
+var _user$project$Main$turnBy = F2(
+	function (d, keys) {
+		return A2(_user$project$Main_ops['??'], keys, 'A') ? (d - 1.0e-2) : (A2(_user$project$Main_ops['??'], keys, 'D') ? (d + 1.0e-2) : d);
+	});
+var _user$project$Main$rocketView = function (_p4) {
+	var _p5 = _p4;
+	var rocketImg = A2(_user$project$Main_ops['??'], _p5.keys, 'W') ? 'rocket-burn.svg' : 'rocket.svg';
+	var r = _p5.rocket;
+	var angle = _elm_lang$core$Basics$toString(r.d * 360);
 	var rx = _elm_lang$core$Basics$toString(r.x - 20);
-	var angle = _elm_lang$core$Basics$toString(r.d);
+	var ry = _elm_lang$core$Basics$toString(r.y - 20);
 	var transforms = A2(
 		_elm_lang$core$Basics_ops['++'],
 		'rotate(',
@@ -29,7 +55,7 @@ var _user$project$Main$rocketView = function (r) {
 				_elm_lang$svg$Svg_Attributes$y(ry),
 				_elm_lang$svg$Svg_Attributes$width('40'),
 				_elm_lang$svg$Svg_Attributes$height('40'),
-				_elm_lang$svg$Svg_Attributes$xlinkHref('method-draw-image.svg'),
+				_elm_lang$svg$Svg_Attributes$xlinkHref(rocketImg),
 				_elm_lang$svg$Svg_Attributes$transform(transforms)
 			]),
 		_elm_lang$core$Native_List.fromArray(
@@ -66,7 +92,7 @@ var _user$project$Main$view = function (model) {
 							]),
 						_elm_lang$core$Native_List.fromArray(
 							[])),
-						_user$project$Main$rocketView(model.rocket)
+						_user$project$Main$rocketView(model)
 					])),
 				A2(
 				_elm_lang$html$Html$p,
@@ -76,33 +102,99 @@ var _user$project$Main$view = function (model) {
 					[
 						_elm_lang$html$Html$text(
 						_elm_lang$core$Basics$toString(model))
+					])),
+				A2(
+				_elm_lang$html$Html$p,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text(
+						_elm_lang$core$Basics$toString(
+							_elm_lang$core$Basics$sin(
+								_elm_lang$core$Basics$turns(model.rocket.d))))
+					])),
+				A2(
+				_elm_lang$html$Html$p,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text(
+						_elm_lang$core$Basics$toString(
+							_elm_lang$core$Basics$cos(
+								_elm_lang$core$Basics$turns(model.rocket.d))))
 					]))
 			]));
 };
+var _user$project$Main$keyUp = F2(
+	function (k, keys) {
+		return A2(
+			_elm_lang$core$Set$remove,
+			_elm_lang$core$String$fromChar(
+				_elm_lang$core$Char$fromCode(k)),
+			keys);
+	});
+var _user$project$Main$keyDown = F2(
+	function (k, keys) {
+		return A2(
+			_elm_lang$core$Set$insert,
+			_elm_lang$core$String$fromChar(
+				_elm_lang$core$Char$fromCode(k)),
+			keys);
+	});
 var _user$project$Main$update = F2(
-	function (msg, _p0) {
-		var _p1 = _p0;
-		var _p3 = _p1.rocket;
-		var _p2 = msg;
-		return {
-			ctor: '_Tuple2',
-			_0: _elm_lang$core$Native_Utils.update(
-				_p1,
-				{
-					rocket: _elm_lang$core$Native_Utils.update(
-						_p3,
+	function (msg, _p6) {
+		var _p7 = _p6;
+		var _p10 = _p7.rocket;
+		var _p9 = _p7;
+		var _p8 = msg;
+		switch (_p8.ctor) {
+			case 'Tick':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						_p9,
 						{
-							d: A2(_elm_lang$core$Basics_ops['%'], _p3.d + 10, 360)
-						})
-				}),
-			_1: _elm_lang$core$Platform_Cmd$none
-		};
+							rocket: _elm_lang$core$Native_Utils.update(
+								_p10,
+								{
+									s: A2(_user$project$Main$accelerateBy, _p10.s, _p9.keys),
+									d: A2(_user$project$Main$turnBy, _p10.d, _p9.keys),
+									x: _user$project$Main$moveX(_p10),
+									y: _user$project$Main$moveY(_p10)
+								})
+						}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			case 'KeyDownMsg':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						_p9,
+						{
+							keys: A2(_user$project$Main$keyDown, _p8._0, _p9.keys)
+						}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			default:
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						_p9,
+						{
+							keys: A2(_user$project$Main$keyUp, _p8._0, _p9.keys)
+						}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+		}
 	});
 var _user$project$Main$init = {
 	ctor: '_Tuple2',
 	_0: {
-		rocket: {x: 50, y: 50, d: 0, s: 0},
-		score: 0
+		rocket: {x: 500, y: 500, d: 0, s: 2},
+		score: 0,
+		keys: _elm_lang$core$Set$empty
 	},
 	_1: _elm_lang$core$Platform_Cmd$none
 };
@@ -110,15 +202,27 @@ var _user$project$Main$Rocket = F4(
 	function (a, b, c, d) {
 		return {x: a, y: b, d: c, s: d};
 	});
-var _user$project$Main$Model = F2(
-	function (a, b) {
-		return {rocket: a, score: b};
+var _user$project$Main$Model = F3(
+	function (a, b, c) {
+		return {rocket: a, score: b, keys: c};
 	});
+var _user$project$Main$KeyUpMsg = function (a) {
+	return {ctor: 'KeyUpMsg', _0: a};
+};
+var _user$project$Main$KeyDownMsg = function (a) {
+	return {ctor: 'KeyDownMsg', _0: a};
+};
 var _user$project$Main$Tick = function (a) {
 	return {ctor: 'Tick', _0: a};
 };
-var _user$project$Main$subscriptions = function (_p4) {
-	return A2(_elm_lang$core$Time$every, 100 * _elm_lang$core$Time$millisecond, _user$project$Main$Tick);
+var _user$project$Main$subscriptions = function (_p11) {
+	return _elm_lang$core$Platform_Sub$batch(
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(_elm_lang$core$Time$every, 30 * _elm_lang$core$Time$millisecond, _user$project$Main$Tick),
+				_elm_lang$keyboard$Keyboard$downs(_user$project$Main$KeyDownMsg),
+				_elm_lang$keyboard$Keyboard$ups(_user$project$Main$KeyUpMsg)
+			]));
 };
 var _user$project$Main$main = {
 	main: _elm_lang$html$Html_App$program(

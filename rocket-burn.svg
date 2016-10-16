@@ -1,0 +1,22 @@
+<svg width="32" height="32" xmlns="http://www.w3.org/2000/svg">
+ <!-- Created with Method Draw - http://github.com/duopixel/Method-Draw/ -->
+ <g>
+  <title>background</title>
+  <rect fill="none" id="canvas_background" height="34" width="34" y="-1" x="-1"/>
+  <g display="none" overflow="visible" y="0" x="0" height="100%" width="100%" id="canvasGrid">
+   <rect fill="url(#gridpattern)" stroke-width="0" y="0" x="0" height="100%" width="100%"/>
+  </g>
+ </g>
+ <g>
+  <title>Layer 1</title>
+  <line stroke-linecap="undefined" stroke-linejoin="undefined" id="svg_1" y2="0.311071" x2="16.250002" y1="31.624994" x1="16.250002" stroke-width="1.5" stroke="#000" fill="none"/>
+  <line stroke="#000" stroke-linecap="undefined" stroke-linejoin="undefined" id="svg_2" y2="0.000006" x2="16.250002" y1="20.751966" x1="5.750006" stroke-width="1.5" fill="none"/>
+  <line stroke="#000" stroke-linecap="undefined" stroke-linejoin="undefined" id="svg_3" y2="0.500006" x2="16.250002" y1="20.410567" x1="26.124998" stroke-width="1.5" fill="none"/>
+  <line stroke="#000" stroke-linecap="undefined" stroke-linejoin="undefined" id="svg_4" y2="20.612957" x2="25.877295" y1="20.612957" x1="6.375005" stroke-width="1.5" fill="none"/>
+  <line stroke-linecap="undefined" stroke-linejoin="undefined" id="svg_6" y2="31.366698" x2="10.1333" y1="25.249997" x1="16.250002" fill-opacity="null" stroke-opacity="null" stroke-width="1.5" stroke="#000" fill="none"/>
+  <line stroke-linecap="undefined" stroke-linejoin="undefined" id="svg_7" y2="31.379993" x2="22.379998" y1="25.124997" x1="16.125002" fill-opacity="null" stroke-opacity="null" stroke-width="1.5" stroke="#000" fill="none"/>
+  <line stroke-linecap="undefined" stroke-linejoin="undefined" id="svg_8" y2="31.249995" x2="22.502525" y1="31.249995" x1="10.125004" fill-opacity="null" stroke-opacity="null" stroke-width="1.5" stroke="#000" fill="none"/>
+  <rect stroke="#8B4D4B" id="svg_15" height="10.249997" width="0.5" y="21.624998" x="5.750006" fill-opacity="null" stroke-opacity="null" stroke-width="1.5" fill="#C97A86"/>
+  <rect id="svg_16" height="10.124996" width="0.75" y="21.624998" x="25.374999" fill-opacity="null" stroke-opacity="null" stroke-width="1.5" stroke="#8B4D4B" fill="#C97A86"/>
+ </g>
+</svg>
