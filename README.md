@@ -12,4 +12,4 @@ $ cd rocket-elm
 $ elm-reactor
 ```
 
-Visit http://localhost:8000/ and click on `rocket.elm`.
+Visit http://localhost:8000/ and click on `Main.elm`.
