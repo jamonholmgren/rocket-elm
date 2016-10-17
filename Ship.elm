@@ -18,12 +18,9 @@ type alias Ship =
     Mover { hp : Int }
 
 
-bounds = ((0, 1000), (0, 1000))
-
-
 tickShip : Ship -> Ship
 tickShip ship =
-    tickMover ship bounds
+    tickMover ship 0 0 1000 1000
 
 
 shipView : Ship -> Html msg

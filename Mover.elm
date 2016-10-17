@@ -1,4 +1,4 @@
-module Mover exposing (Mover, moveX, moveY, tickMover, moverView)
+module Mover exposing (Mover, tickMover, moverView)
 
 import Html exposing (Html)
 import Svg exposing (image)
@@ -16,13 +16,13 @@ type alias Mover a =
     }
 
 
-tickMover : Mover a -> ((Float, Float), (Float, Float)) -> Mover a
-tickMover mover bounds =
+tickMover : Mover a -> Float -> Float -> Float -> Float -> Mover a
+tickMover mover x1 y1 x2 y2 =
     { mover |
       s = (accelerateMover mover)
     , d = (turnMover mover)
-    , x = (moveX mover bounds)
-    , y = (moveY mover bounds)
+    , x = (moveX mover x1 x2)
+    , y = (moveY mover y1 y2)
     }
 
 
@@ -33,13 +33,13 @@ normalize low high curr =
     else curr
 
 
-moveX : Mover a -> ((Float, a), (Float, a)) -> Float
-moveX {x, s, d} ((x1, _), (x2, _)) =
+moveX : Mover a -> Float -> Float -> Float
+moveX {x, s, d} x1 x2 =
     clamp x1 x2 x + s * (cos <| turns <| d - 0.25)
 
 
-moveY : Mover a ->  ((a, Float), (a, Float)) -> Float
-moveY {y, s, d} ((_, y1), (_, y2)) =
+moveY : Mover a -> Float -> Float -> Float
+moveY {y, s, d} y1 y2 =
     clamp y1 y2 y + s * (sin <| turns <| d - 0.25)
 
 

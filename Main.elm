@@ -1,7 +1,7 @@
 module Main exposing (..)
 
 import Ship exposing (Ship, tickShip, shipView)
-import Bullet exposing (Bullet)
+import Bullet exposing (Bullet, tickBullets, bulletViews)
 
 import Html exposing (Html, div, p, text)
 import Html.App as App
@@ -63,7 +63,7 @@ type Msg
     | KeyUpMsg Keyboard.KeyCode
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ({ ship, keys } as model) =
+update msg ({ ship, bullets, keys } as model) =
     case msg of
         Tick _ ->
             let
@@ -72,11 +72,15 @@ update msg ({ ship, keys } as model) =
                     , turn = (turnKey keys)
                     }
                 newShip = tickShip s
+                newBullets = tickBullets bullets
             in
-                ({ model | ship = newShip }, Cmd.none)
+                ({ model | ship = newShip, bullets = newBullets }, Cmd.none)
 
         KeyDownMsg k ->
-            ({ model | keys = (addKey k keys) }, Cmd.none)
+            ({ model |
+                keys = (addKey k keys)
+                , bullets = (addBullet k model.bullets model.ship)
+            }, Cmd.none)
 
         KeyUpMsg k ->
             ({ model | keys = (removeKey k keys) }, Cmd.none)
@@ -114,6 +118,20 @@ turnKey keys =
     else 0.0
 
 
+addBullet : Int -> List Bullet -> Ship -> List Bullet
+addBullet k bullets ship =
+    if (fromChar <| fromCode <| k) == "E" then
+        { x = ship.x
+        , y = ship.y
+        , d = ship.d
+        , s = 15
+        , acc = 0
+        , turn = 0
+        , friendly = True
+        } :: bullets
+    else
+        bullets
+
 -- SUBSCRIPTIONS
 
 
@@ -141,6 +159,7 @@ gameView model =
     svg [ viewBox "0 0 1000 1000", width "600px" ]
         [ backgroundView
         , shipView model.ship
+        , bulletViews model.bullets
         ]
 
 debugView : Model -> Html msg

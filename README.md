@@ -1,8 +1,9 @@
 # Rocket Elm
 
-![rocket-elm](https://cloud.githubusercontent.com/assets/1479215/19415883/f87d0404-9333-11e6-9d32-30a4a6b6679b.gif)
+![rocket-elm-2](https://cloud.githubusercontent.com/assets/1479215/19426213/9777b5b6-93ef-11e6-8508-b4d54b4d8325.gif)
 
-Pilot a little rocket ship around an SVG canvas using WASD.
+
+Pilot a little rocket ship around an SVG canvas using WASD. Press E to fire bullets.
 
 ## Getting Started
 
