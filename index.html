@@ -8811,6 +8811,48 @@ var _jamonholmgren$rocket_elm$Ship$tickShip = function (ship) {
 		1000,
 		1000);
 };
+var _jamonholmgren$rocket_elm$Smoke$smokeView = function (smoke) {
+	var sa = _elm_lang$core$Basics$toString(smoke.alpha);
+	var ss = _elm_lang$core$Basics$toString(smoke.size);
+	var sy = _elm_lang$core$Basics$toString(smoke.y - (smoke.size / 2));
+	var sx = _elm_lang$core$Basics$toString(smoke.x - (smoke.size / 2));
+	return A2(
+		_elm_lang$svg$Svg$image,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$svg$Svg_Attributes$x(sx),
+				_elm_lang$svg$Svg_Attributes$y(sy),
+				_elm_lang$svg$Svg_Attributes$width(ss),
+				_elm_lang$svg$Svg_Attributes$height(ss),
+				_elm_lang$svg$Svg_Attributes$opacity(sa),
+				_elm_lang$svg$Svg_Attributes$xlinkHref('./assets/smoke.png')
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[]));
+};
+var _jamonholmgren$rocket_elm$Smoke$smokeViews = function (smokes) {
+	return A2(
+		_elm_lang$svg$Svg$g,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		A2(_elm_lang$core$List$map, _jamonholmgren$rocket_elm$Smoke$smokeView, smokes));
+};
+var _jamonholmgren$rocket_elm$Smoke$isVisible = function (b) {
+	return _elm_lang$core$Native_Utils.cmp(b.alpha, 5.0e-2) > 0;
+};
+var _jamonholmgren$rocket_elm$Smoke$tickSmoke = function (smoke) {
+	var s = _elm_lang$core$Native_Utils.update(
+		smoke,
+		{alpha: smoke.alpha - 1.0e-2, size: smoke.size + 1});
+	return _jamonholmgren$rocket_elm$Smoke$isVisible(s) ? _elm_lang$core$Maybe$Just(s) : _elm_lang$core$Maybe$Nothing;
+};
+var _jamonholmgren$rocket_elm$Smoke$tickSmokes = function (smokes) {
+	return A2(_elm_lang$core$List$filterMap, _jamonholmgren$rocket_elm$Smoke$tickSmoke, smokes);
+};
+var _jamonholmgren$rocket_elm$Smoke$Smoke = F4(
+	function (a, b, c, d) {
+		return {x: a, y: b, size: c, alpha: d};
+	});
 var _jamonholmgren$rocket_elm$Main$backgroundView = A2(
 	_elm_lang$svg$Svg$rect,
 	_elm_lang$core$Native_List.fromArray(
@@ -8860,8 +8902,9 @@ var _jamonholmgren$rocket_elm$Main$gameView = function (model) {
 		_elm_lang$core$Native_List.fromArray(
 			[
 				_jamonholmgren$rocket_elm$Main$backgroundView,
-				_jamonholmgren$rocket_elm$Ship$shipView(model.ship),
-				_jamonholmgren$rocket_elm$Bullet$bulletViews(model.bullets)
+				_jamonholmgren$rocket_elm$Bullet$bulletViews(model.bullets),
+				_jamonholmgren$rocket_elm$Smoke$smokeViews(model.smokes),
+				_jamonholmgren$rocket_elm$Ship$shipView(model.ship)
 			]));
 };
 var _jamonholmgren$rocket_elm$Main$view = function (model) {
@@ -8878,6 +8921,13 @@ var _jamonholmgren$rocket_elm$Main$view = function (model) {
 				_jamonholmgren$rocket_elm$Main$debugView(model)
 			]));
 };
+var _jamonholmgren$rocket_elm$Main$addSmoke = F2(
+	function (ship, smokes) {
+		return (_elm_lang$core$Native_Utils.cmp(ship.acc, 0) > 0) ? A2(
+			_elm_lang$core$List_ops['::'],
+			{x: ship.x, y: ship.y, size: 10.0, alpha: 0.75},
+			smokes) : smokes;
+	});
 var _jamonholmgren$rocket_elm$Main$removeKey = F2(
 	function (k, keys) {
 		return A2(
@@ -8905,43 +8955,51 @@ var _jamonholmgren$rocket_elm$Main$accKey = function (keys) {
 var _jamonholmgren$rocket_elm$Main$turnKey = function (keys) {
 	return A2(_jamonholmgren$rocket_elm$Main_ops['??'], keys, 'A') ? -1.0 : (A2(_jamonholmgren$rocket_elm$Main_ops['??'], keys, 'D') ? 1.0 : 0.0);
 };
-var _jamonholmgren$rocket_elm$Main$fireBullet = F3(
-	function (keys, bullets, ship) {
-		return (_elm_lang$core$Native_Utils.eq(ship.reload, 0) && A2(_jamonholmgren$rocket_elm$Main_ops['??'], keys, 'J')) ? {
-			ctor: '_Tuple2',
-			_0: A2(
-				_elm_lang$core$List_ops['::'],
-				{x: ship.x, y: ship.y, d: ship.d, s: 15, ts: 15, acc: 0, turn: 0, friendly: true},
-				bullets),
-			_1: _elm_lang$core$Native_Utils.update(
-				ship,
-				{reload: 10})
-		} : {ctor: '_Tuple2', _0: bullets, _1: ship};
+var _jamonholmgren$rocket_elm$Main$fireBullet = F4(
+	function (keys, bullets, smokes, ship) {
+		if (_elm_lang$core$Native_Utils.eq(ship.reload, 0) && A2(_jamonholmgren$rocket_elm$Main_ops['??'], keys, 'J')) {
+			var newSmoke = {x: ship.x, y: ship.y, size: 20.0, alpha: 1.0};
+			var newBullet = {x: ship.x, y: ship.y, d: ship.d, s: 15, ts: 15, acc: 0, turn: 0, friendly: true};
+			return {
+				ctor: '_Tuple3',
+				_0: A2(_elm_lang$core$List_ops['::'], newBullet, bullets),
+				_1: A2(_elm_lang$core$List_ops['::'], newSmoke, smokes),
+				_2: _elm_lang$core$Native_Utils.update(
+					ship,
+					{reload: 10})
+			};
+		} else {
+			return {ctor: '_Tuple3', _0: bullets, _1: smokes, _2: ship};
+		}
 	});
 var _jamonholmgren$rocket_elm$Main$update = F2(
 	function (msg, _p0) {
 		var _p1 = _p0;
+		var _p6 = _p1.ship;
 		var _p5 = _p1;
 		var _p4 = _p1.keys;
 		var _p2 = msg;
 		switch (_p2.ctor) {
 			case 'Tick':
+				var sm = _jamonholmgren$rocket_elm$Smoke$tickSmokes(
+					A2(_jamonholmgren$rocket_elm$Main$addSmoke, _p6, _p1.smokes));
 				var b = _jamonholmgren$rocket_elm$Bullet$tickBullets(_p1.bullets);
 				var s = _jamonholmgren$rocket_elm$Ship$tickShip(
 					_elm_lang$core$Native_Utils.update(
-						_p1.ship,
+						_p6,
 						{
 							acc: _jamonholmgren$rocket_elm$Main$accKey(_p4),
 							turn: _jamonholmgren$rocket_elm$Main$turnKey(_p4)
 						}));
-				var _p3 = A3(_jamonholmgren$rocket_elm$Main$fireBullet, _p4, b, s);
+				var _p3 = A4(_jamonholmgren$rocket_elm$Main$fireBullet, _p4, b, sm, s);
 				var newBullets = _p3._0;
-				var newShip = _p3._1;
+				var newSmokes = _p3._1;
+				var newShip = _p3._2;
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						_p5,
-						{ship: newShip, bullets: newBullets}),
+						{ship: newShip, bullets: newBullets, smokes: newSmokes}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'KeyDownMsg':
@@ -8969,17 +9027,19 @@ var _jamonholmgren$rocket_elm$Main$update = F2(
 var _jamonholmgren$rocket_elm$Main$init = {
 	ctor: '_Tuple2',
 	_0: {
-		ship: {x: 500, y: 500, d: 0, s: 2.0, ts: 6.0, acc: 0.0, turn: 0.0, hp: 100, reload: 0},
+		ship: {x: 500, y: 500, d: 0, s: 2.0, ts: 10.0, acc: 0.0, turn: 0.0, hp: 100, reload: 0},
 		bullets: _elm_lang$core$Native_List.fromArray(
+			[]),
+		smokes: _elm_lang$core$Native_List.fromArray(
 			[]),
 		score: 0,
 		keys: _elm_lang$core$Set$empty
 	},
 	_1: _elm_lang$core$Platform_Cmd$none
 };
-var _jamonholmgren$rocket_elm$Main$Model = F4(
-	function (a, b, c, d) {
-		return {ship: a, bullets: b, score: c, keys: d};
+var _jamonholmgren$rocket_elm$Main$Model = F5(
+	function (a, b, c, d, e) {
+		return {ship: a, bullets: b, smokes: c, score: d, keys: e};
 	});
 var _jamonholmgren$rocket_elm$Main$KeyUpMsg = function (a) {
 	return {ctor: 'KeyUpMsg', _0: a};
@@ -8990,7 +9050,7 @@ var _jamonholmgren$rocket_elm$Main$KeyDownMsg = function (a) {
 var _jamonholmgren$rocket_elm$Main$Tick = function (a) {
 	return {ctor: 'Tick', _0: a};
 };
-var _jamonholmgren$rocket_elm$Main$subscriptions = function (_p6) {
+var _jamonholmgren$rocket_elm$Main$subscriptions = function (_p7) {
 	return _elm_lang$core$Platform_Sub$batch(
 		_elm_lang$core$Native_List.fromArray(
 			[
