@@ -3,6 +3,7 @@ module Main exposing (..)
 import Ship exposing (Ship, tickShip, shipView)
 import Bullet exposing (Bullet, tickBullets, bulletViews)
 
+
 import Html exposing (Html, div, p, text)
 import Html.App as App
 import Svg exposing (svg, rect)
@@ -25,8 +26,7 @@ main =
 
 
 -- MODEL
-
-
+-- Represents the whole "world" we're working with.
 type alias Model =
     { ship : Ship
     , bullets : List Bullet
@@ -35,6 +35,7 @@ type alias Model =
     }
 
 
+-- Creates the initial world with default values.
 init : ( Model, Cmd Msg )
 init =
     ({
@@ -46,6 +47,7 @@ init =
             , acc = 0.0
             , turn = 0.0
             , hp = 100
+            , reload = 0
             }
         , bullets = []
         , score = 0
@@ -57,32 +59,48 @@ init =
 -- UPDATE
 
 
+-- We respond to keyboard events and tick every n milliseconds.
 type Msg
     = Tick Time
     | KeyDownMsg Keyboard.KeyCode
     | KeyUpMsg Keyboard.KeyCode
 
+
+-- Our all-powerful update function.
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg ({ ship, bullets, keys } as model) =
     case msg of
         Tick _ ->
             let
+                -- Update the ship to properly represent current user commands.
+                -- For example, if we're holding "W", then we want ship.acc = 1.0
+                -- Or if we're holding "A", we want ship.turn = -1.0
+                -- Then "tick" the ship forward, turn it, etc.
                 s = { ship |
-                      acc = (accKey keys)
-                    , turn = (turnKey keys)
-                    }
-                newShip = tickShip s
-                newBullets = tickBullets bullets
+                         acc = (accKey keys)
+                       , turn = (turnKey keys)
+                       } |> tickShip
+
+                -- Same with bullets
+                b = tickBullets bullets
+
+                -- And lastly, we want to add another bullet to the list if the ship
+                -- is ready to fire and we're holding down "J".
+                -- This also results in the ship's reloader engaging which means we
+                -- have to update the ship again.
+                -- This makes me feel slightly uneasy, updating the ship multiple times.
+                -- Wonder if there's a more logical way?
+                (newBullets, newShip) = (fireBullet keys b s)
             in
+                -- New model with updated ship and list of bullets.
                 ({ model | ship = newShip, bullets = newBullets }, Cmd.none)
 
         KeyDownMsg k ->
-            ({ model |
-                keys = (addKey k keys)
-                , bullets = (addBullet k model.bullets model.ship)
-            }, Cmd.none)
+            -- Only thing we do here is add a key to our set of current keys.
+            ({ model | keys = (addKey k keys) }, Cmd.none)
 
         KeyUpMsg k ->
+            -- Only thing we do here is remove a key from our set of current keys.
             ({ model | keys = (removeKey k keys) }, Cmd.none)
 
 
@@ -118,19 +136,19 @@ turnKey keys =
     else 0.0
 
 
-addBullet : Int -> List Bullet -> Ship -> List Bullet
-addBullet k bullets ship =
-    if (fromChar <| fromCode <| k) == "E" then
-        { x = ship.x
+fireBullet : Set String -> List Bullet -> Ship -> (List Bullet, Ship)
+fireBullet keys bullets ship =
+    if (ship.reload == 0 && keys ?? "J") then
+        ({ x = ship.x
         , y = ship.y
         , d = ship.d
-        , s = 15
+        , s = 20
         , acc = 0
         , turn = 0
         , friendly = True
-        } :: bullets
+        } :: bullets, {ship | reload = 10})
     else
-        bullets
+        (bullets, ship)
 
 -- SUBSCRIPTIONS
 
@@ -164,7 +182,10 @@ gameView model =
 
 debugView : Model -> Html msg
 debugView model =
-    p [] [ text (toString model) ]
+    div []
+        [ p [] [ text "WASD to fly, J to fire bullets" ]
+        , p [] [ text (toString model) ]
+        ]
 
 backgroundView : Html msg
 backgroundView =

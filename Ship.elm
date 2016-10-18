@@ -1,26 +1,19 @@
 module Ship exposing (Ship, tickShip, shipView)
-import Mover exposing (tickMover, moverView)
+import Mover exposing (Mover, tickMover, moverView)
 
 import Html exposing (Html)
 
-type alias Mover a =
-    { a |
-      x : Float
-    , y : Float
-    , d : Float         -- direction
-    , s : Float         -- speed
-    , acc : Float       -- accelerating -1 0 1
-    , turn : Float      -- turning -1 0 1
-    }
-
 
 type alias Ship =
-    Mover { hp : Int }
+    Mover
+        { hp : Int
+        , reload : Int
+        }
 
 
 tickShip : Ship -> Ship
 tickShip ship =
-    tickMover ship 0 0 1000 1000
+    tickMover {ship | reload = clamp 0 100 (ship.reload - 1) } 0 0 1000 1000
 
 
 shipView : Ship -> Html msg
