@@ -1,5 +1,10 @@
 module Main exposing (..)
 
+-- Main program for Rocket Elm, a project by
+-- Jamon Holmgren (https://github.com/jamonholmgren)
+-- Learning Elm by trial and fire and lots of mistakes.
+-- License is MIT.
+
 import Ship exposing (Ship, tickShip, shipView)
 import Bullet exposing (Bullet, tickBullets, bulletViews)
 
@@ -44,6 +49,7 @@ init =
             , y = 500
             , d = 0
             , s = 2.0
+            , ts = 10.0 -- Top speed
             , acc = 0.0
             , turn = 0.0
             , hp = 100
@@ -112,16 +118,19 @@ update msg ({ ship, bullets, keys } as model) =
 infixr 9 ??
 
 
+-- Adds a pressed key to our keys set
 addKey : Int -> Set String -> Set String
 addKey k keys =
     Set.insert (fromChar <| fromCode <| k) keys
 
 
+-- Removes a released key from our keys set
 removeKey : Int -> Set String -> Set String
 removeKey k keys =
     Set.remove (fromChar <| fromCode <| k) keys
 
 
+-- Checks if W/S are held and sets the ship acceleration to -1, 1, or 0.
 accKey : Set String -> Float
 accKey keys =
     if keys ?? "W" then 1.0
@@ -129,6 +138,7 @@ accKey keys =
     else 0.0
 
 
+-- Checks if A/D are held and sets the ship turn to -1, 1, or 0.
 turnKey : Set String -> Float
 turnKey keys =
     if keys ?? "A" then -1.0
@@ -136,13 +146,16 @@ turnKey keys =
     else 0.0
 
 
+-- Checks if J is held and fires a bullet. Also updates the ship to
+-- include a reloading weapon if the bullet is fired.
 fireBullet : Set String -> List Bullet -> Ship -> (List Bullet, Ship)
 fireBullet keys bullets ship =
     if (ship.reload == 0 && keys ?? "J") then
         ({ x = ship.x
         , y = ship.y
         , d = ship.d
-        , s = 20
+        , s = 15
+        , ts = 15
         , acc = 0
         , turn = 0
         , friendly = True
@@ -150,9 +163,11 @@ fireBullet keys bullets ship =
     else
         (bullets, ship)
 
+
 -- SUBSCRIPTIONS
 
-
+-- We subscribe to three types of events. One is a time tick of every 30 ms.
+-- The other two are keyboard -- keys pushed and keys released.
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
@@ -165,13 +180,16 @@ subscriptions _ =
 -- VIEW
 
 
+-- Render a div with the game box and debug info.
 view : Model -> Html Msg
 view model =
-    div [ width "1000", height "1000" ]
+    div [ width "1000px", height "1000px" ]
         [ gameView model
         , debugView model
         ]
 
+
+-- Game box, built out of SVG nodes.
 gameView : Model -> Html msg
 gameView model =
     svg [ viewBox "0 0 1000 1000", width "600px" ]
@@ -180,6 +198,8 @@ gameView model =
         , bulletViews model.bullets
         ]
 
+
+-- Show the current model for debugging and some help text.
 debugView : Model -> Html msg
 debugView model =
     div []
@@ -187,6 +207,8 @@ debugView model =
         , p [] [ text (toString model) ]
         ]
 
+
+-- Background is just a big blue box.
 backgroundView : Html msg
 backgroundView =
     rect [ x "0", y "0", width "1000", height "1000", fill "#0B79CE" ] []

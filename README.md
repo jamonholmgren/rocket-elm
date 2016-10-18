@@ -14,3 +14,7 @@ $ elm-reactor
 ```
 
 Visit http://localhost:8000/ and click on `Main.elm`.
+
+### License
+
+MIT - by Jamon Holmgren

@@ -1,6 +1,10 @@
 module Bullet exposing (Bullet, tickBullets, bulletViews)
 import Mover exposing (Mover, tickMover, moverView)
 
+-- Bullet is a module that represents the many bullets flying
+-- around the game box. These can be fired by the player or at
+-- the player. Bullets are tracked in a giant list and updated
+-- via a List.filterMap.
 
 import Html exposing (Html)
 import Svg exposing (g)

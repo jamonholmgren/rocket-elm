@@ -1,5 +1,14 @@
 module Mover exposing (Mover, tickMover, moverView)
 
+-- Mover is a generic item that has a position, direction, speed,
+-- and can accelerate or turn.
+--
+-- We share this code among items like Ship and Bullet so we don't
+-- have to reimplement those functions many times.
+--
+-- I hope I'm not thinking too "OOP" here. But little games like this
+-- are one of the few places where some level of OOP actually works.
+
 import Html exposing (Html)
 import Svg exposing (image)
 import Svg.Attributes exposing (x, y, width, height, xlinkHref, transform)
@@ -11,6 +20,7 @@ type alias Mover a =
     , y : Float
     , d : Float         -- direction
     , s : Float         -- speed
+    , ts : Float        -- top speed
     , acc : Float       -- accelerating -1 0 1
     , turn : Float      -- turning -1 0 1
     }
@@ -45,7 +55,7 @@ moveY {y, s, d} y1 y2 =
 
 accelerateMover : Mover a -> Float
 accelerateMover mover =
-    clamp 1 10 mover.s + (mover.acc * 0.1)
+    clamp 1 mover.ts mover.s + (mover.acc * 0.1)
 
 
 turnMover : Mover a -> Float
