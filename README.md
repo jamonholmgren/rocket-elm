@@ -18,3 +18,7 @@ Visit http://localhost:8000/ and click on `Main.elm`.
 ### License
 
 MIT - by Jamon Holmgren
+
+## Credits
+
+* Fighter plane icon created by Phil Scott from the Noun Project.
