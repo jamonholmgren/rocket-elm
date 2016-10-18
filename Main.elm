@@ -7,12 +7,13 @@ module Main exposing (..)
 
 import Ship exposing (Ship, tickShip, shipView)
 import Bullet exposing (Bullet, tickBullets, bulletViews)
+import Smoke exposing (Smoke, tickSmokes, smokeViews)
 
 
 import Html exposing (Html, div, p, text)
 import Html.App as App
-import Svg exposing (svg, rect)
-import Svg.Attributes exposing (x, y, viewBox, fill, width, height)
+import Svg exposing (svg, rect, image)
+import Svg.Attributes exposing (x, y, viewBox, fill, width, height, xlinkHref)
 import Time exposing (Time, millisecond)
 import Keyboard
 import Char exposing (fromCode)
@@ -35,6 +36,7 @@ main =
 type alias Model =
     { ship : Ship
     , bullets : List Bullet
+    , smokes : List Smoke
     , score : Int
     , keys : Set String
     }
@@ -49,13 +51,14 @@ init =
             , y = 500
             , d = 0
             , s = 2.0
-            , ts = 6.0 -- Top speed
+            , ts = 10.0 -- Top speed
             , acc = 0.0
             , turn = 0.0
             , hp = 100
             , reload = 0
             }
         , bullets = []
+        , smokes = []
         , score = 0
         , keys = Set.empty
     }, Cmd.none )
@@ -74,7 +77,7 @@ type Msg
 
 -- Our all-powerful update function.
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ({ ship, bullets, keys } as model) =
+update msg ({ ship, bullets, smokes, keys } as model) =
     case msg of
         Tick _ ->
             let
@@ -90,16 +93,24 @@ update msg ({ ship, bullets, keys } as model) =
                 -- Same with bullets
                 b = tickBullets bullets
 
+
+                -- If we're accelerating, add a smoke item
+                sm = smokes |> (addSmoke ship) |> tickSmokes
+
                 -- And lastly, we want to add another bullet to the list if the ship
                 -- is ready to fire and we're holding down "J".
                 -- This also results in the ship's reloader engaging which means we
                 -- have to update the ship again.
                 -- This makes me feel slightly uneasy, updating the ship multiple times.
                 -- Wonder if there's a more logical way?
-                (newBullets, newShip) = (fireBullet keys b s)
+                (newBullets, newSmokes, newShip) = (fireBullet keys b sm s)
             in
                 -- New model with updated ship and list of bullets.
-                ({ model | ship = newShip, bullets = newBullets }, Cmd.none)
+                ({ model
+                    | ship = newShip
+                    , bullets = newBullets
+                    , smokes = newSmokes
+                }, Cmd.none)
 
         KeyDownMsg k ->
             -- Only thing we do here is add a key to our set of current keys.
@@ -148,20 +159,43 @@ turnKey keys =
 
 -- Checks if J is held and fires a bullet. Also updates the ship to
 -- include a reloading weapon if the bullet is fired.
-fireBullet : Set String -> List Bullet -> Ship -> (List Bullet, Ship)
-fireBullet keys bullets ship =
+fireBullet : Set String -> List Bullet -> List Smoke -> Ship -> (List Bullet, List Smoke, Ship)
+fireBullet keys bullets smokes ship =
     if (ship.reload == 0 && keys ?? "J") then
-        ({ x = ship.x
-        , y = ship.y
-        , d = ship.d
-        , s = 15
-        , ts = 15
-        , acc = 0
-        , turn = 0
-        , friendly = True
-        } :: bullets, {ship | reload = 10})
+        let
+            newBullet =
+                { x = ship.x
+                , y = ship.y
+                , d = ship.d
+                , s = 15
+                , ts = 15
+                , acc = 0
+                , turn = 0
+                , friendly = True
+                }
+            newSmoke =
+                { x = ship.x
+                , y = ship.y
+                , size = 20.0
+                , alpha = 1.0
+                }
+        in
+            ( newBullet :: bullets
+            , newSmoke :: smokes
+            , {ship | reload = 10})
     else
-        (bullets, ship)
+        (bullets, smokes, ship)
+
+addSmoke : Ship -> List Smoke -> List Smoke
+addSmoke ship smokes =
+    if ship.acc > 0 then
+        { x = ship.x
+        , y = ship.y
+        , size = 10.0
+        , alpha = 0.75
+        } :: smokes
+    else
+        smokes
 
 
 -- SUBSCRIPTIONS
@@ -194,8 +228,9 @@ gameView : Model -> Html msg
 gameView model =
     svg [ viewBox "0 0 1000 1000", width "600px" ]
         [ backgroundView
-        , shipView model.ship
         , bulletViews model.bullets
+        , smokeViews model.smokes
+        , shipView model.ship
         ]
 
 
