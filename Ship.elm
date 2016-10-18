@@ -35,8 +35,8 @@ shipView : Ship -> Html msg
 shipView ship =
     let
         rocketImg = if ship.acc > 0 then
-                        "./assets/Rocket-Revamped-Burn.png"
+                        "./assets/rocket-revamped-burn.png"
                     else
-                        "./assets/Rocket-Revamped.png"
+                        "./assets/rocket-revamped.png"
     in
         moverView ship rocketImg (40, 40)
