@@ -9,34 +9,34 @@ import Svg.Attributes exposing (x, y, width, height, xlinkHref, opacity)
 
 
 type alias Smoke =
-    { x : Float
-    , y : Float
-    , size : Float
-    , alpha : Float
-    }
+  { x : Float
+  , y : Float
+  , size : Float
+  , alpha : Float
+  }
 
 
 -- Take a list of smoke items and "tick" them (make them grow and fade).
 -- If a smoke item is at zero alpha, we remove it
 tickSmokes : List Smoke -> List Smoke
 tickSmokes smokes =
-    List.filterMap tickSmoke smokes
+  List.filterMap tickSmoke smokes
 
 
 -- Ticks a single smoke (grows and fades). Returns
 -- Nothing if we're out of bounds.
 tickSmoke : Smoke -> Maybe Smoke
 tickSmoke smoke =
-    let
-        s = {smoke | alpha = smoke.alpha - 0.01, size = smoke.size + 1}
-    in
-        if s |> isVisible then Just s else Nothing
+  let
+    s = {smoke | alpha = smoke.alpha - 0.01, size = smoke.size + 1}
+  in
+    if s |> isVisible then Just s else Nothing
 
 
 -- Just checks if a smoke is visible.
 isVisible : Smoke -> Bool
 isVisible b =
-    b.alpha > 0.05
+  b.alpha > 0.05
 
 
 -- Renders all smokes from a list of smokes.
@@ -44,23 +44,23 @@ isVisible b =
 -- Really just a convenience so I can return one SVG node.
 smokeViews : List Smoke -> Html msg
 smokeViews smokes =
-    g [] (List.map smokeView smokes)
+  g [] (List.map smokeView smokes)
 
 
 -- Renders one smoke.
 smokeView : Smoke -> Html msg
 smokeView smoke =
-    let
-        sx = toString (smoke.x - (smoke.size / 2))
-        sy = toString (smoke.y - (smoke.size / 2))
-        ss = toString smoke.size
-        sa = toString smoke.alpha
-    in
-        image
-            [ x sx
-            , y sy
-            , width ss
-            , height ss
-            , opacity sa
-            , xlinkHref "./assets/smoke.png"
-            ] []
+  let
+    sx = toString (smoke.x - (smoke.size / 2))
+    sy = toString (smoke.y - (smoke.size / 2))
+    ss = toString smoke.size
+    sa = toString smoke.alpha
+  in
+    image
+      [ x sx
+      , y sy
+      , width ss
+      , height ss
+      , opacity sa
+      , xlinkHref "./assets/smoke.png"
+      ] []

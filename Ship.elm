@@ -10,22 +10,22 @@ import Html exposing (Html)
 
 -- Ship is a Mover that also has hp and a weapon cooldown reload.
 type alias Ship =
-    Mover
-        { hp : Int
-        , reload : Int
-        }
+  Mover
+    { hp : Int
+    , reload : Int
+    }
 
 
 -- Moves/turns the ship and cools down the weapon every tick.
 tickShip : Ship -> Ship
 tickShip ship =
-    tickMover {ship | reload = weaponCooldown(ship.reload) } 0 0 1000 1000
+  tickMover {ship | reload = weaponCooldown(ship.reload) } 0 0 1000 1000
 
 
 -- Cooldown a weapon from max 100 down to cooled 0.
 weaponCooldown : Int -> Int
 weaponCooldown r =
-    clamp 0 100 (r - 1)
+  clamp 0 100 (r - 1)
 
 
 -- Renders the ship (aka rocket) with the provided SVGs.
@@ -33,10 +33,10 @@ weaponCooldown r =
 -- burning. 40x40 px within the 1000x1000 game box.
 shipView : Ship -> Html msg
 shipView ship =
-    let
-        rocketImg = if ship.acc > 0 then
-                        "./assets/rocket-4-burn.png"
-                    else
-                        "./assets/rocket-4.png"
-    in
-        moverView ship rocketImg (40, 40)
+  let
+    rocketImg = if ship.acc > 0 then
+                  "./assets/rocket-4-burn.png"
+                else
+                  "./assets/rocket-4.png"
+  in
+    moverView ship rocketImg (40, 40)
