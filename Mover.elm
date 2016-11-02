@@ -1,4 +1,5 @@
 module Mover exposing (Mover, tickMover, moverView)
+import Trig exposing (xDelta, yDelta, normalize)
 
 -- Mover is a generic item that has a position, direction, speed,
 -- and can accelerate or turn.
@@ -36,37 +37,34 @@ tickMover mover x1 y1 x2 y2 =
   }
 
 
-normalize : Float -> Float -> Float -> Float
-normalize low high curr =
-  if curr < low then curr + (high - low)
-    else if curr >= high then curr - (high - low)
-    else curr
-
-
 moveX : Mover a -> Float -> Float -> Float
 moveX {x, s, d} x1 x2 =
-  clamp x1 x2 x + s * (cos <| turns <| d - 0.25)
+  clamp x1 x2 x + (xDelta s d)
 
 
 moveY : Mover a -> Float -> Float -> Float
 moveY {y, s, d} y1 y2 =
-  clamp y1 y2 y + s * (sin <| turns <| d - 0.25)
+  clamp y1 y2 y + (yDelta s d)
 
 
 accelerateMover : Mover a -> Float
 accelerateMover mover =
-  clamp 1 mover.ts mover.s + (mover.acc * 0.1)
+  let
+    accFactor = 0.1
+    dragFactor = 0.01
+  in
+    clamp 1 mover.ts mover.s + (mover.acc * accFactor) - dragFactor
 
 
 turnMover : Mover a -> Float
 turnMover mover =
-  normalize 0 1.0 mover.d + (mover.turn * 0.01)
+  normalize 0 360 mover.d + mover.turn * 5
 
 
 moverView : Mover a -> String -> (Float, Float) -> Html msg
 moverView mover img (w, h) =
   let
-    angle = toString (mover.d * 360)
+    angle = toString mover.d
     rx = toString (mover.x - (w / 2))
     ry = toString (mover.y - (h / 2))
 
