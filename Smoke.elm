@@ -3,6 +3,7 @@ module Smoke exposing (Smoke, tickSmokes, smokeViews)
 -- Smoke is a module that represents smoke clouds from rockets
 -- and jets and smoke firing.
 
+import Time exposing (Time)
 import Html exposing (Html)
 import Svg exposing (g, image)
 import Svg.Attributes exposing (x, y, width, height, xlinkHref, opacity)
@@ -18,15 +19,15 @@ type alias Smoke =
 
 -- Take a list of smoke items and "tick" them (make them grow and fade).
 -- If a smoke item is at zero alpha, we remove it
-tickSmokes : List Smoke -> List Smoke
-tickSmokes smokes =
-  List.filterMap tickSmoke smokes
+tickSmokes : Time -> List Smoke -> List Smoke
+tickSmokes diff smokes =
+  List.filterMap (tickSmoke diff) smokes
 
 
 -- Ticks a single smoke (grows and fades). Returns
 -- Nothing if we're out of bounds.
-tickSmoke : Smoke -> Maybe Smoke
-tickSmoke smoke =
+tickSmoke : Time -> Smoke -> Maybe Smoke
+tickSmoke diff smoke =
   let
     s = {smoke | alpha = smoke.alpha - 0.01, size = smoke.size + 1}
   in

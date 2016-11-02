@@ -6,6 +6,7 @@ import Mover exposing (Mover, tickMover, moverView)
 -- the player. Bullets are tracked in a giant list and updated
 -- via a List.filterMap.
 
+import Time exposing (Time)
 import Html exposing (Html)
 import Svg exposing (g)
 
@@ -19,17 +20,17 @@ type alias Bullet =
 -- Take a list of bullets and "tick" them (make them move
 -- forward, etc). If a bullet is out of bounds, we remove it
 -- from the list of bullets.
-tickBullets : List Bullet -> List Bullet
-tickBullets bullets =
-  List.filterMap tickBullet bullets
+tickBullets : Time -> List Bullet -> List Bullet
+tickBullets diff bullets =
+  List.filterMap (tickBullet diff) bullets
 
 
 -- Ticks a single bullet (moves it forward, etc). Returns
 -- Nothing if we're out of bounds.
-tickBullet : Bullet -> Maybe Bullet
-tickBullet bullet =
+tickBullet : Time -> Bullet -> Maybe Bullet
+tickBullet diff bullet =
   let
-    b = tickMover bullet -100 -100 1100 1100
+    b = tickMover diff bullet -100 -100 1100 1100
   in
     if b |> isInBounds then Just b else Nothing
 

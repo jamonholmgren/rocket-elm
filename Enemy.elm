@@ -6,6 +6,7 @@ import Trig exposing (targetDirection, turnDirection)
 -- kill the rocket ship.
 -- They start spawning partway into the game.
 
+import Time exposing (Time)
 import Html exposing (Html)
 import Svg exposing (g)
 
@@ -23,19 +24,19 @@ type alias Enemy =
 -- Take a list of enemies and "tick" them (make them move
 -- forward, etc). If a enemy is out of bounds, we remove it
 -- from the list of enemies.
-tickEnemies : List Enemy -> List Enemy
-tickEnemies enemies =
+tickEnemies : Time -> List Enemy -> List Enemy
+tickEnemies diff enemies =
   -- TODO: Change to filterMap when we have death detection
-  List.map tickEnemy enemies
+  List.map (tickEnemy diff) enemies
 
 
 -- Moves/turns the enemy and cools down the weapon every tick.
-tickEnemy : Enemy -> Enemy
-tickEnemy enemy =
-  tickMover { enemy
-            | reload = weaponCooldown(enemy.reload)
-            } -100 -100 1100 1100
-            |> targetStrategy
+tickEnemy : Time -> Enemy -> Enemy
+tickEnemy diff enemy =
+  tickMover diff { enemy
+                 | reload = weaponCooldown(enemy.reload)
+                 } -100 -100 1100 1100
+                 |> targetStrategy
 
 
 targetStrategy : Enemy -> Enemy

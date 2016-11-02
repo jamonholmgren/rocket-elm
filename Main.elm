@@ -5,6 +5,7 @@ module Main exposing (..)
 -- Learning Elm by trial and fire and lots of mistakes.
 -- License is MIT.
 
+import Mover exposing (Mover)
 import Ship exposing (Ship, tickShip, shipView)
 import Bullet exposing (Bullet, tickBullets, bulletViews)
 import Smoke exposing (Smoke, tickSmokes, smokeViews)
@@ -18,6 +19,7 @@ import Html.Attributes exposing (style)
 import Svg exposing (svg, rect, image)
 import Svg.Attributes exposing (x, y, viewBox, fill, width, height, xlinkHref)
 import Time exposing (Time, millisecond)
+import AnimationFrame exposing (diffs)
 import Keyboard
 import Char exposing (fromCode)
 import String exposing (fromChar)
@@ -91,7 +93,8 @@ initEnemy =
 
 -- We respond to keyboard events and tick every n milliseconds.
 type Msg
-  = Tick Time
+  = Frame Time
+  | AITick Time
   | KeyDownMsg Keyboard.KeyCode
   | KeyUpMsg Keyboard.KeyCode
 
@@ -100,8 +103,11 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg ({ ship, bullets, smokes, keys, enemies } as model) =
   case msg of
-    Tick _ ->
+    Frame timeDiff ->
       let
+        -- Normalize the time diff based on normal FPS vs current FPS
+        diff = timeDiff / 30
+
         -- Update the ship to properly represent current user commands.
         -- For example, if we're holding "W", then we want ship.acc = 1.0
         -- Or if we're holding "A", we want ship.turn = -1.0
@@ -109,24 +115,16 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
         s = { ship |
                  acc = (accKey keys)
                , turn = (turnKey keys)
-               } |> tickShip
+               } |> tickShip diff
 
         -- Same with bullets
-        b = tickBullets bullets
+        b = tickBullets diff bullets
 
-        -- If we're accelerating, add a smoke item
-        sm = smokes |> (addSmoke ship) |> tickSmokes
+        newSmokes = smokes |> tickSmokes diff
 
         -- Tick all the enemy ships forward too
         -- and retarget them to this ship
-        newEnemies = tickEnemies (List.map (\e ->
-                                    { e
-                                    | targetX = ship.x
-                                    , targetY = ship.y
-                                    }
-                                  ) enemies)
-
-        -- TODO: Add smoke items for accelerating enemy ships
+        newEnemies = tickEnemies diff enemies
 
         -- And lastly, we want to add another bullet to the list if the ship
         -- is ready to fire and we're holding down "J".
@@ -134,7 +132,7 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
         -- have to update the ship again.
         -- This makes me feel slightly uneasy, updating the ship multiple times.
         -- Wonder if there's a more logical way?
-        (newBullets, newSmokes, newShip) = (fireBullet keys b sm s)
+        (newBullets, newShip) = (fireBullet keys b s)
       in
         -- New model with updated ship and list of bullets.
         ({ model
@@ -143,6 +141,28 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
             , smokes = newSmokes
             , enemies = newEnemies
         }, Cmd.none)
+
+    AITick _ ->
+      let
+        -- Retarget toward our ship
+        newEnemies =  List.map (\e ->
+                        { e
+                        | targetX = ship.x
+                        , targetY = ship.y
+                        }
+                      ) enemies
+
+        -- Add smoke if accelerating, either our ship or the enemies
+        ns = List.append smokes (List.filterMap addSmoke newEnemies)
+        newSmokes = List.append ns (List.filterMap addSmoke [ship])
+
+      in
+        -- New model
+        ({ model
+            | smokes = newSmokes
+            , enemies = newEnemies
+        }, Cmd.none)
+
 
     KeyDownMsg k ->
       -- Only thing we do here is add a key to our set of current keys.
@@ -191,8 +211,8 @@ turnKey keys =
 
 -- Checks if J is held and fires a bullet. Also updates the ship to
 -- include a reloading weapon if the bullet is fired.
-fireBullet : Set String -> List Bullet -> List Smoke -> Ship -> (List Bullet, List Smoke, Ship)
-fireBullet keys bullets smokes ship =
+fireBullet : Set String -> List Bullet -> Ship -> (List Bullet, Ship)
+fireBullet keys bullets ship =
   if (ship.reload == 0 && keys ?? "J") then
     let
       newBullets =
@@ -205,27 +225,21 @@ fireBullet keys bullets smokes ship =
         , turn = 0
         , friendly = True
         } :: bullets
-      newSmokes =
-        { x = ship.x
-        , y = ship.y
-        , size = 20.0
-        , alpha = 1.0
-        } :: smokes
     in
-      ( newBullets, newSmokes, {ship | reload = 10} )
+      ( newBullets, {ship | reload = 10} )
   else
-    (bullets, smokes, ship)
+    (bullets, ship)
 
-addSmoke : Ship -> List Smoke -> List Smoke
-addSmoke ship smokes =
-  if ship.acc > 0 then
-    { x = ship.x
-    , y = ship.y
-    , size = 10.0
-    , alpha = 0.75
-    } :: smokes
+addSmoke : Mover a -> Maybe Smoke
+addSmoke {acc, x, y} =
+  if acc > 0 then
+    Just  { x = x
+          , y = y
+          , size = 10.0
+          , alpha = 0.75
+          }
   else
-    smokes
+    Nothing
 
 
 -- SUBSCRIPTIONS
@@ -235,7 +249,8 @@ addSmoke ship smokes =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
   Sub.batch
-    [ Time.every (30 * millisecond) Tick
+    [ AnimationFrame.diffs Frame
+    , Time.every (100 * millisecond) AITick
     , Keyboard.downs KeyDownMsg
     , Keyboard.ups KeyUpMsg
     ]
@@ -270,7 +285,7 @@ debugView : Model -> Html msg
 debugView model =
   div []
     [ p [] [ text "WASD to fly, J to fire bullets" ]
-    , p [] [ text (toString model) ]
+    -- , p [] [ text (toString model) ]
     ]
 
 
