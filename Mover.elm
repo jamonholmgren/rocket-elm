@@ -6,9 +6,6 @@ import Trig exposing (xDelta, yDelta, normalize)
 --
 -- We share this code among items like Ship and Bullet so we don't
 -- have to reimplement those functions many times.
---
--- I hope I'm not thinking too "OOP" here. But little games like this
--- are one of the few places where some level of OOP actually works.
 
 import Html exposing (Html)
 import Svg exposing (image)
@@ -27,28 +24,28 @@ type alias Mover a =
   }
 
 
-tickMover : Mover a -> Float -> Float -> Float -> Float -> Mover a
-tickMover mover x1 y1 x2 y2 =
+tickMover : Float -> Mover a -> Float -> Float -> Float -> Float -> Mover a
+tickMover timeDiff mover x1 y1 x2 y2 =
   { mover
-    | s = (accelerateMover mover)
-    , d = (turnMover mover)
-    , x = (moveX mover x1 x2)
-    , y = (moveY mover y1 y2)
+    | s = (accelerateMover timeDiff mover)
+    , d = (turnMover timeDiff mover)
+    , x = (moveX timeDiff mover x1 x2)
+    , y = (moveY timeDiff mover y1 y2)
   }
 
 
-moveX : Mover a -> Float -> Float -> Float
-moveX {x, s, d} x1 x2 =
-  clamp x1 x2 x + (xDelta s d)
+moveX : Float -> Mover a -> Float -> Float -> Float
+moveX timeDiff {x, s, d} x1 x2 =
+  clamp x1 x2 x + (xDelta timeDiff s d)
 
 
-moveY : Mover a -> Float -> Float -> Float
-moveY {y, s, d} y1 y2 =
-  clamp y1 y2 y + (yDelta s d)
+moveY : Float -> Mover a -> Float -> Float -> Float
+moveY timeDiff {y, s, d} y1 y2 =
+  clamp y1 y2 y + (yDelta timeDiff s d)
 
 
-accelerateMover : Mover a -> Float
-accelerateMover mover =
+accelerateMover : Float -> Mover a -> Float
+accelerateMover timeDiff mover =
   let
     accFactor = 0.1
     dragFactor = 0.01
@@ -56,9 +53,9 @@ accelerateMover mover =
     clamp 1 mover.ts mover.s + (mover.acc * accFactor) - dragFactor
 
 
-turnMover : Mover a -> Float
-turnMover mover =
-  normalize 0 360 mover.d + mover.turn * 5
+turnMover : Float -> Mover a -> Float
+turnMover timeDiff mover =
+  normalize 0 360 mover.d + mover.turn * (5 * timeDiff)
 
 
 moverView : Mover a -> String -> (Float, Float) -> Html msg

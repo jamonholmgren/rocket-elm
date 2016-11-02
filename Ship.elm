@@ -5,6 +5,7 @@ import Mover exposing (Mover, tickMover, moverView)
 -- It's a little rocket ship that blasts around
 -- the constrained game box and fires bullets wildly.
 
+import Time exposing (Time)
 import Html exposing (Html)
 
 
@@ -17,9 +18,9 @@ type alias Ship =
 
 
 -- Moves/turns the ship and cools down the weapon every tick.
-tickShip : Ship -> Ship
-tickShip ship =
-  tickMover {ship | reload = weaponCooldown(ship.reload) } 20 20 980 980
+tickShip : Time -> Ship -> Ship
+tickShip diff ship =
+  tickMover diff { ship | reload = weaponCooldown(ship.reload) } 20 20 980 980
 
 
 -- Cooldown a weapon from max 100 down to cooled 0.

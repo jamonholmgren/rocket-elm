@@ -15,19 +15,26 @@ module Trig exposing
 -- time since I took trig.
 
 
+-- Note that many functions take a time delta ratio for modifying
+-- the effect based on the time diff since the last frame. So, for
+-- example, if we're at 60 fps then it might be * 1.0, or 30 fps it
+-- might be * 2.0. This is to keep a consistent feel despite different
+-- framerates.
+
+
 -- Given a speed and direction, calculates the x delta
 -- which is basically how much the x increases or decreases
 -- Note that the direction is rotated 90 degrees.
-xDelta : Float -> Float -> Float
-xDelta s d =
-  s * (cos <| degrees <| d - 90)
+xDelta : Float -> Float -> Float -> Float
+xDelta diff s d =
+  s * (cos <| degrees <| d - 90) * diff
 
 -- Given a speed and direction, calculates the y delta
 -- which is basically how much the y increases or decreases
 -- Note that the direction is rotated 90 degrees.
-yDelta : Float -> Float -> Float
-yDelta s d =
-  s * (sin <| degrees <| d - 90)
+yDelta : Float -> Float -> Float -> Float
+yDelta diff s d =
+  s * (sin <| degrees <| d - 90) * diff
 
 -- Given two directions, calculates how many degrees apart
 -- they are, negative if left or positive if right.
