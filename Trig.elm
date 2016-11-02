@@ -1,6 +1,7 @@
 module Trig exposing
   ( xDelta
   , yDelta
+  , dDelta
   , targetDirection
   , targetDistance
   , turnDirection
@@ -9,6 +10,9 @@ module Trig exposing
   )
 
 -- Module for calculating various useful values for the game.
+-- Bear with me on the embarrassing math, and please submit
+-- pull requests if you see something stupid. It's been a long
+-- time since I took trig.
 
 
 -- Given a speed and direction, calculates the x delta
@@ -25,26 +29,32 @@ yDelta : Float -> Float -> Float
 yDelta s d =
   s * (sin <| degrees <| d - 90)
 
+-- Given two directions, calculates how many degrees apart
+-- they are, negative if left or positive if right.
+dDelta : Float -> Float -> Float
+dDelta td d =
+  toFloat ((floor ((d - td) + 180)) % 360 - 180)
+
 -- Given a target x and target y, calculates the direction
--- toward that target from the origin. Returns "turns" (0-1.0)
+-- toward that target from the origin. Returns degrees.
 targetDirection : Float -> Float -> Float
 targetDirection x y =
-  (atan2 x y) / pi
+  normalize 0 360 (-1 * ((atan2 x y) * (180 / pi)))
 
 -- Given a target direction and my direction, return the best
 -- direction to turn to point toward the target eventually.
 -- Will return 0 if we're within 0.01 turns (3.6 degrees).
 turnDirection : Float -> Float -> Float
 turnDirection td d =
-  if facing td d 0.01 then 0
-  else if (td - d + 1.0) > 0.5 then 1
-  else -1
+  if facing td d 5 then 0
+  else if ((floor (td - d + 360)) % 360) > 180 then -1
+  else 1
 
 -- Given a target direction and my direction and a tolerance,
 -- are we pointed the right direction yet?
 facing : Float -> Float -> Float -> Bool
 facing td d tolerance =
-  (abs ((td + 1) - (d + 1))) <= tolerance
+  (abs (dDelta td d)) <= tolerance
 
 -- Given a target x and y, calculates the distance toward
 -- that target from the origin.

@@ -10,7 +10,7 @@ import Bullet exposing (Bullet, tickBullets, bulletViews)
 import Smoke exposing (Smoke, tickSmokes, smokeViews)
 import Enemy exposing (Enemy, tickEnemies, enemyViews)
 
-import Trig exposing (targetDistance, targetDirection)
+-- import Trig exposing (targetDistance, targetDirection, turnDirection)
 
 import Html exposing (Html, div, p, text)
 import Html.App as App
@@ -73,8 +73,8 @@ initShip =
 
 initEnemy : Enemy
 initEnemy =
-  { x = 0
-  , y = 0
+  { x = 300
+  , y = 200
   , d = 0.4
   , s = 5.0
   , ts = 10.0 -- Top speed
@@ -118,7 +118,13 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
         sm = smokes |> (addSmoke ship) |> tickSmokes
 
         -- Tick all the enemy ships forward too
-        newEnemies = tickEnemies enemies
+        -- and retarget them to this ship
+        newEnemies = tickEnemies (List.map (\e ->
+                                    { e
+                                    | targetX = ship.x
+                                    , targetY = ship.y
+                                    }
+                                  ) enemies)
 
         -- TODO: Add smoke items for accelerating enemy ships
 
@@ -265,8 +271,6 @@ debugView model =
   div []
     [ p [] [ text "WASD to fly, J to fire bullets" ]
     , p [] [ text (toString model) ]
-    , p [] [ text ("tdir " ++ (toString (targetDirection (model.ship.x - 500) (model.ship.y - 500)))) ]
-    , p [] [ text ("tdis " ++ (toString (targetDistance model.ship.x model.ship.y))) ]
     ]
 
 

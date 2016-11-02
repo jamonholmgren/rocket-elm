@@ -49,12 +49,12 @@ moveY {y, s, d} y1 y2 =
 
 accelerateMover : Mover a -> Float
 accelerateMover mover =
-  clamp 1 mover.ts mover.s + (mover.acc * 0.1)
+  clamp 1 mover.ts mover.s + (mover.acc * 0.1 - 0.01)
 
 
 turnMover : Mover a -> Float
 turnMover mover =
-  normalize 0 1.0 mover.d + mover.turn * 5
+  normalize 0 360 mover.d + mover.turn * 5
 
 
 moverView : Mover a -> String -> (Float, Float) -> Html msg

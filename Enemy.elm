@@ -1,5 +1,6 @@
 module Enemy exposing (Enemy, tickEnemies, enemyViews)
 import Mover exposing (Mover, tickMover, moverView)
+import Trig exposing (targetDirection, turnDirection)
 
 -- Enemy ships fly through the game box and try to
 -- kill the rocket ship.
@@ -38,11 +39,16 @@ tickEnemy enemy =
 
 
 targetStrategy : Enemy -> Enemy
-targetStrategy enemy =
+targetStrategy ({x, y, d, targetX, targetY} as enemy) =
   let
-    targetDirection = 1
+    td = targetDirection (x - targetX) (y - targetY)
+    dir = turnDirection td d
+    a = if dir == 0 then 1 else -1
   in
-    enemy
+    { enemy
+    | turn = dir
+    , acc = a
+    }
 
 -- Cooldown a weapon from max 100 down to cooled 0.
 weaponCooldown : Int -> Int
