@@ -9689,23 +9689,35 @@ var _jamonholmgren$rocket_elm$Main$update = F2(
 				};
 		}
 	});
-var _jamonholmgren$rocket_elm$Main$initEnemy = {x: 300, y: 200, d: 0.4, s: 5.0, ts: 10.0, acc: 0.0, turn: 0.0, hp: 10, reload: 0, targetX: 500, targetY: 500};
+var _jamonholmgren$rocket_elm$Main$initEnemy = {x: 100, y: 100, d: 0, s: 5.0, ts: 10.0, acc: 0.0, turn: 0.0, hp: 10, reload: 0, targetX: 500, targetY: 500};
 var _jamonholmgren$rocket_elm$Main$initShip = {x: 500, y: 500, d: 0, s: 2.0, ts: 10.0, acc: 0.0, turn: 0.0, hp: 100, reload: 0};
-var _jamonholmgren$rocket_elm$Main$init = {
-	ctor: '_Tuple2',
-	_0: {
-		ship: _jamonholmgren$rocket_elm$Main$initShip,
-		bullets: _elm_lang$core$Native_List.fromArray(
-			[]),
-		smokes: _elm_lang$core$Native_List.fromArray(
-			[]),
-		enemies: _elm_lang$core$Native_List.fromArray(
-			[_jamonholmgren$rocket_elm$Main$initEnemy]),
-		score: 0,
-		keys: _elm_lang$core$Set$empty
-	},
-	_1: _elm_lang$core$Platform_Cmd$none
-};
+var _jamonholmgren$rocket_elm$Main$init = function () {
+	var slowEnemy = _elm_lang$core$Native_Utils.update(
+		_jamonholmgren$rocket_elm$Main$initEnemy,
+		{x: 100, y: 500, ts: 4});
+	var mediumEnemy = _elm_lang$core$Native_Utils.update(
+		_jamonholmgren$rocket_elm$Main$initEnemy,
+		{x: 100, y: 100, ts: 7});
+	var fastEnemy = _elm_lang$core$Native_Utils.update(
+		_jamonholmgren$rocket_elm$Main$initEnemy,
+		{x: 900, y: 500, ts: 9});
+	var enemies = _elm_lang$core$Native_List.fromArray(
+		[fastEnemy, mediumEnemy, slowEnemy]);
+	return {
+		ctor: '_Tuple2',
+		_0: {
+			ship: _jamonholmgren$rocket_elm$Main$initShip,
+			bullets: _elm_lang$core$Native_List.fromArray(
+				[]),
+			smokes: _elm_lang$core$Native_List.fromArray(
+				[]),
+			enemies: enemies,
+			score: 0,
+			keys: _elm_lang$core$Set$empty
+		},
+		_1: _elm_lang$core$Platform_Cmd$none
+	};
+}();
 var _jamonholmgren$rocket_elm$Main$Model = F6(
 	function (a, b, c, d, e, f) {
 		return {ship: a, bullets: b, smokes: c, enemies: d, score: e, keys: f};

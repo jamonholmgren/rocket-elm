@@ -51,10 +51,16 @@ type alias Model =
 -- Creates the initial world with default values.
 init : ( Model, Cmd Msg )
 init =
+  let
+    fastEnemy = { initEnemy | x = 900, y = 500, ts = 9 }
+    mediumEnemy = { initEnemy | x = 100, y = 100, ts = 7 }
+    slowEnemy = { initEnemy | x = 100, y = 500, ts = 4 }
+    enemies = [ fastEnemy, mediumEnemy, slowEnemy ]
+  in
   ( { ship = initShip
     , bullets = []
     , smokes = []
-    , enemies = [ initEnemy ]
+    , enemies = enemies
     , score = 0
     , keys = Set.empty
     }, Cmd.none )
@@ -75,9 +81,9 @@ initShip =
 
 initEnemy : Enemy
 initEnemy =
-  { x = 300
-  , y = 200
-  , d = 0.4
+  { x = 100
+  , y = 100
+  , d = 0
   , s = 5.0
   , ts = 10.0 -- Top speed
   , acc = 0.0
