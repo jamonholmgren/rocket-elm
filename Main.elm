@@ -159,8 +159,7 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
                       ) enemies
 
         -- Add smoke if accelerating, either our ship or the enemies
-        ns = List.append smokes (List.filterMap addSmoke newEnemies)
-        newSmokes = List.append ns (List.filterMap addSmoke [ship])
+        newSmokes = smokes ++ (List.filterMap addSmoke newEnemies) ++ (List.filterMap addSmoke [ship])
 
       in
         -- New model
