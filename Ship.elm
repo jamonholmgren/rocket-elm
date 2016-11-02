@@ -19,7 +19,7 @@ type alias Ship =
 -- Moves/turns the ship and cools down the weapon every tick.
 tickShip : Ship -> Ship
 tickShip ship =
-  tickMover {ship | reload = weaponCooldown(ship.reload) } 0 0 1000 1000
+  tickMover {ship | reload = weaponCooldown(ship.reload) } 20 20 980 980
 
 
 -- Cooldown a weapon from max 100 down to cooled 0.

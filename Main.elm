@@ -8,10 +8,13 @@ module Main exposing (..)
 import Ship exposing (Ship, tickShip, shipView)
 import Bullet exposing (Bullet, tickBullets, bulletViews)
 import Smoke exposing (Smoke, tickSmokes, smokeViews)
+import Enemy exposing (Enemy, tickEnemies, enemyViews)
 
+import Trig exposing (targetDistance, targetDirection)
 
 import Html exposing (Html, div, p, text)
 import Html.App as App
+import Html.Attributes exposing (style)
 import Svg exposing (svg, rect, image)
 import Svg.Attributes exposing (x, y, viewBox, fill, width, height, xlinkHref)
 import Time exposing (Time, millisecond)
@@ -37,6 +40,7 @@ type alias Model =
   { ship : Ship
   , bullets : List Bullet
   , smokes : List Smoke
+  , enemies : List Enemy
   , score : Int
   , keys : Set String
   }
@@ -45,25 +49,42 @@ type alias Model =
 -- Creates the initial world with default values.
 init : ( Model, Cmd Msg )
 init =
-  ({
-    ship =
-      { x = 500
-      , y = 500
-      , d = 0
-      , s = 2.0
-      , ts = 10.0 -- Top speed
-      , acc = 0.0
-      , turn = 0.0
-      , hp = 100
-      , reload = 0
-      }
+  ( { ship = initShip
     , bullets = []
     , smokes = []
+    , enemies = [ initEnemy ]
     , score = 0
     , keys = Set.empty
-  }, Cmd.none )
+    }, Cmd.none )
 
 
+initShip : Ship
+initShip =
+  { x = 500
+  , y = 500
+  , d = 0
+  , s = 2.0
+  , ts = 10.0 -- Top speed
+  , acc = 0.0
+  , turn = 0.0
+  , hp = 100
+  , reload = 0
+  }
+
+initEnemy : Enemy
+initEnemy =
+  { x = 0
+  , y = 0
+  , d = 0.4
+  , s = 5.0
+  , ts = 10.0 -- Top speed
+  , acc = 0.0
+  , turn = 0.0
+  , hp = 10
+  , reload = 0
+  , targetX = 500
+  , targetY = 500
+  }
 
 -- UPDATE
 
@@ -77,7 +98,7 @@ type Msg
 
 -- Our all-powerful update function.
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ({ ship, bullets, smokes, keys } as model) =
+update msg ({ ship, bullets, smokes, keys, enemies } as model) =
   case msg of
     Tick _ ->
       let
@@ -93,9 +114,13 @@ update msg ({ ship, bullets, smokes, keys } as model) =
         -- Same with bullets
         b = tickBullets bullets
 
-
         -- If we're accelerating, add a smoke item
         sm = smokes |> (addSmoke ship) |> tickSmokes
+
+        -- Tick all the enemy ships forward too
+        newEnemies = tickEnemies enemies
+
+        -- TODO: Add smoke items for accelerating enemy ships
 
         -- And lastly, we want to add another bullet to the list if the ship
         -- is ready to fire and we're holding down "J".
@@ -110,6 +135,7 @@ update msg ({ ship, bullets, smokes, keys } as model) =
             | ship = newShip
             , bullets = newBullets
             , smokes = newSmokes
+            , enemies = newEnemies
         }, Cmd.none)
 
     KeyDownMsg k ->
@@ -215,7 +241,7 @@ subscriptions _ =
 -- Render a div with the game box and debug info.
 view : Model -> Html Msg
 view model =
-  div [ width "1000px", height "1000px" ]
+  div [ width "1000px", height "1000px", style [("margin", "50px 50px"), ("text-align", "center")] ]
     [ gameView model
     , debugView model
     ]
@@ -229,6 +255,7 @@ gameView model =
     , bulletViews model.bullets
     , smokeViews model.smokes
     , shipView model.ship
+    , enemyViews model.enemies
     ]
 
 
@@ -238,6 +265,8 @@ debugView model =
   div []
     [ p [] [ text "WASD to fly, J to fire bullets" ]
     , p [] [ text (toString model) ]
+    , p [] [ text ("tdir " ++ (toString (targetDirection (model.ship.x - 500) (model.ship.y - 500)))) ]
+    , p [] [ text ("tdis " ++ (toString (targetDistance model.ship.x model.ship.y))) ]
     ]
 
 
