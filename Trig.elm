@@ -43,7 +43,7 @@ targetDirection x y =
 
 -- Given a target direction and my direction, return the best
 -- direction to turn to point toward the target eventually.
--- Will return 0 if we're within 0.01 turns (3.6 degrees).
+-- Will return 0 if we're within 5 degrees.
 turnDirection : Float -> Float -> Float
 turnDirection td d =
   if facing td d 5 then 0

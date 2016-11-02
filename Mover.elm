@@ -49,7 +49,11 @@ moveY {y, s, d} y1 y2 =
 
 accelerateMover : Mover a -> Float
 accelerateMover mover =
-  clamp 1 mover.ts mover.s + (mover.acc * 0.1 - 0.01)
+  let
+    accFactor = 0.1
+    dragFactor = 0.01
+  in
+    clamp 1 mover.ts mover.s + (mover.acc * accFactor) - dragFactor
 
 
 turnMover : Mover a -> Float
