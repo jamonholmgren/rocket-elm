@@ -55,15 +55,16 @@ init =
     fastEnemy = { initEnemy | x = 900, y = 500, ts = 9 }
     mediumEnemy = { initEnemy | x = 100, y = 100, ts = 7 }
     slowEnemy = { initEnemy | x = 100, y = 500, ts = 4 }
-    enemies = [ fastEnemy, mediumEnemy, slowEnemy ]
+    insaneEnemy = { initEnemy | x = 500, y = 900, ts = 40 }
+    enemies = [ fastEnemy, mediumEnemy, slowEnemy, insaneEnemy ]
   in
-  ( { ship = initShip
-    , bullets = []
-    , smokes = []
-    , enemies = enemies
-    , score = 0
-    , keys = Set.empty
-    }, Cmd.none )
+    ( { ship = initShip
+      , bullets = []
+      , smokes = []
+      , enemies = enemies
+      , score = 0
+      , keys = Set.empty
+      }, Cmd.none )
 
 
 initShip : Ship
@@ -118,15 +119,15 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
         -- For example, if we're holding "W", then we want ship.acc = 1.0
         -- Or if we're holding "A", we want ship.turn = -1.0
         -- Then "tick" the ship forward, turn it, etc.
-        s = { ship |
-                 acc = (accKey keys)
-               , turn = (turnKey keys)
-               } |> tickShip diff
+        s = { ship
+            | acc = (accKey keys)
+            , turn = (turnKey keys)
+            } |> tickShip diff
 
         -- Same with bullets
         b = tickBullets diff bullets
 
-        newSmokes = smokes |> tickSmokes diff
+        newSmokes = tickSmokes diff smokes
 
         -- Tick all the enemy ships forward too
         -- and retarget them to this ship
@@ -141,12 +142,13 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
         (newBullets, newShip) = (fireBullet keys b s)
       in
         -- New model with updated ship and list of bullets.
-        ({ model
-            | ship = newShip
-            , bullets = newBullets
-            , smokes = newSmokes
-            , enemies = newEnemies
-        }, Cmd.none)
+        ( { model
+          | ship = newShip
+          , bullets = newBullets
+          , smokes = newSmokes
+          , enemies = newEnemies
+          }
+        , Cmd.none)
 
     AITick _ ->
       let
@@ -241,7 +243,7 @@ addSmoke {acc, x, y} =
     Just  { x = x
           , y = y
           , size = 10.0
-          , alpha = 0.75
+          , alpha = 1.0
           }
   else
     Nothing

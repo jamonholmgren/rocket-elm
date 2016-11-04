@@ -50,7 +50,7 @@ accelerateMover timeDiff mover =
     accFactor = 0.1
     dragFactor = 0.01
   in
-    clamp 1 mover.ts mover.s + (mover.acc * accFactor) - dragFactor
+    clamp 2 mover.ts mover.s + (mover.acc * accFactor) - dragFactor
 
 
 turnMover : Float -> Mover a -> Float

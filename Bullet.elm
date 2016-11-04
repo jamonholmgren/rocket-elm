@@ -39,7 +39,7 @@ tickBullet diff bullet =
 -- not hardcode these values.
 isInBounds : Bullet -> Bool
 isInBounds b =
-  b.x >= 0 && b.y >= 0 && b.x < 1000 && b.y < 1000
+  b.x >= -100 && b.y >= -100 && b.x < 1100 && b.y < 1100
 
 
 -- Renders all bullets from a list of bullets.
