@@ -14,23 +14,23 @@ import Svg.Attributes exposing (x, y, width, height, xlinkHref, transform)
 
 type alias Mover a =
   { a
-    | x : Float
-    , y : Float
-    , d : Float         -- direction
-    , s : Float         -- speed
-    , ts : Float        -- top speed
-    , acc : Float       -- accelerating -1 0 1
-    , turn : Float      -- turning -1 0 1
+  | x : Float
+  , y : Float
+  , d : Float         -- direction
+  , s : Float         -- speed
+  , ts : Float        -- top speed
+  , acc : Float       -- accelerating -1 0 1
+  , turn : Float      -- turning -1 0 1
   }
 
 
 tickMover : Float -> Mover a -> Float -> Float -> Float -> Float -> Mover a
 tickMover timeDiff mover x1 y1 x2 y2 =
   { mover
-    | s = (accelerateMover timeDiff mover)
-    , d = (turnMover timeDiff mover)
-    , x = (moveX timeDiff mover x1 x2)
-    , y = (moveY timeDiff mover y1 y2)
+  | s = (accelerateMover timeDiff mover)
+  , d = (turnMover timeDiff mover)
+  , x = (moveX timeDiff mover x1 x2)
+  , y = (moveY timeDiff mover y1 y2)
   }
 
 
@@ -50,7 +50,7 @@ accelerateMover timeDiff mover =
     accFactor = 0.1
     dragFactor = 0.01
   in
-    clamp 1 mover.ts mover.s + (mover.acc * accFactor) - dragFactor
+    clamp 2 mover.ts mover.s + (mover.acc * accFactor) - dragFactor
 
 
 turnMover : Float -> Mover a -> Float

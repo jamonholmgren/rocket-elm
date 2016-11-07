@@ -1,4 +1,4 @@
-module Bullet exposing (Bullet, tickBullets, bulletViews)
+module Bullet exposing (Bullet, tickBullets, bulletViews, initBullet)
 import Mover exposing (Mover, tickMover, moverView)
 
 -- Bullet is a module that represents the many bullets flying
@@ -16,6 +16,18 @@ import Svg exposing (g)
 type alias Bullet =
   Mover { friendly : Bool }
 
+
+initBullet : Bullet
+initBullet =
+  { x = 0
+  , y = 0
+  , d = 0
+  , s = 20
+  , ts = 20
+  , acc = 0
+  , turn = 0
+  , friendly = True
+  }
 
 -- Take a list of bullets and "tick" them (make them move
 -- forward, etc). If a bullet is out of bounds, we remove it
@@ -39,7 +51,7 @@ tickBullet diff bullet =
 -- not hardcode these values.
 isInBounds : Bullet -> Bool
 isInBounds b =
-  b.x >= 0 && b.y >= 0 && b.x < 1000 && b.y < 1000
+  b.x >= -100 && b.y >= -100 && b.x < 1100 && b.y < 1100
 
 
 -- Renders all bullets from a list of bullets.

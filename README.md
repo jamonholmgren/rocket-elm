@@ -1,9 +1,9 @@
 # Rocket Elm
 
-![rocket-elm-2](https://cloud.githubusercontent.com/assets/1479215/19426213/9777b5b6-93ef-11e6-8508-b4d54b4d8325.gif)
+![rocket-elm](https://cloud.githubusercontent.com/assets/1479215/20043836/541bbb34-a450-11e6-8812-71c91165a00b.gif)
 
 
-Pilot a little rocket ship around an SVG canvas using WASD. Press E to fire bullets.
+Pilot a little rocket ship around an SVG canvas using WASD, pursued by enemy ships powered by AI. Press J to fire bullets.
 
 ## Getting Started
 
@@ -15,10 +15,14 @@ $ elm-reactor
 
 Visit http://localhost:8000/ and click on `Main.elm`.
 
+## TODO
+
+* [x] Enemy ships fire bullets
+* [ ] Collision detection for bullets
+* [ ] Enemy ships blow up when killed
+* [ ] My ship blows up when killed, and then the game resets
+* [ ] come up with more cool todos...
+
 ### License
 
 MIT - by Jamon Holmgren
-
-## Credits
-
-* Fighter plane icon created by Phil Scott from the Noun Project.
