@@ -9314,7 +9314,7 @@ var _jamonholmgren$rocket_elm$Mover$accelerateMover = F2(
 	function (timeDiff, mover) {
 		var dragFactor = 1.0e-2;
 		var accFactor = 0.1;
-		return (A3(_elm_lang$core$Basics$clamp, 1, mover.ts, mover.s) + (mover.acc * accFactor)) - dragFactor;
+		return (A3(_elm_lang$core$Basics$clamp, 2, mover.ts, mover.s) + (mover.acc * accFactor)) - dragFactor;
 	});
 var _jamonholmgren$rocket_elm$Mover$moveY = F4(
 	function (timeDiff, _p4, y1, y2) {
@@ -9352,7 +9352,7 @@ var _jamonholmgren$rocket_elm$Bullet$bulletViews = function (bullets) {
 		A2(_elm_lang$core$List$map, _jamonholmgren$rocket_elm$Bullet$bulletView, bullets));
 };
 var _jamonholmgren$rocket_elm$Bullet$isInBounds = function (b) {
-	return (_elm_lang$core$Native_Utils.cmp(b.x, 0) > -1) && ((_elm_lang$core$Native_Utils.cmp(b.y, 0) > -1) && ((_elm_lang$core$Native_Utils.cmp(b.x, 1000) < 0) && (_elm_lang$core$Native_Utils.cmp(b.y, 1000) < 0)));
+	return (_elm_lang$core$Native_Utils.cmp(b.x, -100) > -1) && ((_elm_lang$core$Native_Utils.cmp(b.y, -100) > -1) && ((_elm_lang$core$Native_Utils.cmp(b.x, 1100) < 0) && (_elm_lang$core$Native_Utils.cmp(b.y, 1100) < 0)));
 };
 var _jamonholmgren$rocket_elm$Bullet$tickBullet = F2(
 	function (diff, bullet) {
@@ -9366,6 +9366,7 @@ var _jamonholmgren$rocket_elm$Bullet$tickBullets = F2(
 			_jamonholmgren$rocket_elm$Bullet$tickBullet(diff),
 			bullets);
 	});
+var _jamonholmgren$rocket_elm$Bullet$initBullet = {x: 0, y: 0, d: 0, s: 20, ts: 20, acc: 0, turn: 0, friendly: true};
 var _jamonholmgren$rocket_elm$Enemy$enemyView = function (enemy) {
 	var enemyImg = (_elm_lang$core$Native_Utils.cmp(enemy.acc, 0) > 0) ? './assets/rocket-3-burn.svg' : './assets/rocket-3.svg';
 	return A3(
@@ -9381,33 +9382,37 @@ var _jamonholmgren$rocket_elm$Enemy$enemyViews = function (enemies) {
 			[]),
 		A2(_elm_lang$core$List$map, _jamonholmgren$rocket_elm$Enemy$enemyView, enemies));
 };
-var _jamonholmgren$rocket_elm$Enemy$weaponCooldown = function (r) {
-	return A3(_elm_lang$core$Basics$clamp, 0, 100, r - 1);
-};
-var _jamonholmgren$rocket_elm$Enemy$targetStrategy = function (_p0) {
+var _jamonholmgren$rocket_elm$Enemy$weaponCooldown = function (_p0) {
 	var _p1 = _p0;
-	var td = A2(_jamonholmgren$rocket_elm$Trig$targetDirection, _p1.x - _p1.targetX, _p1.y - _p1.targetY);
-	var dir = A2(_jamonholmgren$rocket_elm$Trig$turnDirection, td, _p1.d);
-	var a = _elm_lang$core$Native_Utils.eq(dir, 0) ? 1 : -1;
-	return _elm_lang$core$Native_Utils.update(
-		_p1,
-		{turn: dir, acc: a});
+	var _p3 = _p1.cooldownMax;
+	var _p2 = _p1.cooldown;
+	return (_elm_lang$core$Native_Utils.eq(_p2, 0) && _p1.firing) ? _p3 : A3(_elm_lang$core$Basics$clamp, 0, _p3, _p2 - 1);
 };
+var _jamonholmgren$rocket_elm$Enemy$enemyAI = F2(
+	function (_p4, e) {
+		var _p5 = _p4;
+		var td = A2(_jamonholmgren$rocket_elm$Trig$targetDirection, e.x - _p5.x, e.y - _p5.y);
+		var dir = A2(_jamonholmgren$rocket_elm$Trig$turnDirection, td, e.d);
+		var a = _elm_lang$core$Native_Utils.eq(dir, 0) ? 1 : -0.25;
+		var f = _elm_lang$core$Native_Utils.eq(dir, 0) ? true : false;
+		return _elm_lang$core$Native_Utils.update(
+			e,
+			{turn: dir, acc: a, firing: f});
+	});
 var _jamonholmgren$rocket_elm$Enemy$tickEnemy = F2(
 	function (diff, enemy) {
-		return _jamonholmgren$rocket_elm$Enemy$targetStrategy(
-			A6(
-				_jamonholmgren$rocket_elm$Mover$tickMover,
-				diff,
-				_elm_lang$core$Native_Utils.update(
-					enemy,
-					{
-						reload: _jamonholmgren$rocket_elm$Enemy$weaponCooldown(enemy.reload)
-					}),
-				-100,
-				-100,
-				1100,
-				1100));
+		return A6(
+			_jamonholmgren$rocket_elm$Mover$tickMover,
+			diff,
+			_elm_lang$core$Native_Utils.update(
+				enemy,
+				{
+					cooldown: _jamonholmgren$rocket_elm$Enemy$weaponCooldown(enemy)
+				}),
+			-100,
+			-100,
+			1100,
+			1100);
 	});
 var _jamonholmgren$rocket_elm$Enemy$tickEnemies = F2(
 	function (diff, enemies) {
@@ -9416,6 +9421,7 @@ var _jamonholmgren$rocket_elm$Enemy$tickEnemies = F2(
 			_jamonholmgren$rocket_elm$Enemy$tickEnemy(diff),
 			enemies);
 	});
+var _jamonholmgren$rocket_elm$Enemy$initEnemy = {x: 100, y: 100, d: 0, s: 5.0, ts: 10.0, acc: 0.0, turn: 0.0, hp: 10, firing: false, cooldown: 0, cooldownMax: 12};
 var _jamonholmgren$rocket_elm$Ship$shipView = function (ship) {
 	var rocketImg = (_elm_lang$core$Native_Utils.cmp(ship.acc, 0) > 0) ? './assets/rocket-4-burn.png' : './assets/rocket-4.png';
 	return A3(
@@ -9424,8 +9430,11 @@ var _jamonholmgren$rocket_elm$Ship$shipView = function (ship) {
 		rocketImg,
 		{ctor: '_Tuple2', _0: 40, _1: 40});
 };
-var _jamonholmgren$rocket_elm$Ship$weaponCooldown = function (r) {
-	return A3(_elm_lang$core$Basics$clamp, 0, 100, r - 1);
+var _jamonholmgren$rocket_elm$Ship$weaponCooldown = function (_p0) {
+	var _p1 = _p0;
+	var _p3 = _p1.cooldownMax;
+	var _p2 = _p1.cooldown;
+	return (_elm_lang$core$Native_Utils.eq(_p2, 0) && _p1.firing) ? _p3 : A3(_elm_lang$core$Basics$clamp, 0, _p3, _p2 - 1);
 };
 var _jamonholmgren$rocket_elm$Ship$tickShip = F2(
 	function (diff, ship) {
@@ -9435,13 +9444,14 @@ var _jamonholmgren$rocket_elm$Ship$tickShip = F2(
 			_elm_lang$core$Native_Utils.update(
 				ship,
 				{
-					reload: _jamonholmgren$rocket_elm$Ship$weaponCooldown(ship.reload)
+					cooldown: _jamonholmgren$rocket_elm$Ship$weaponCooldown(ship)
 				}),
 			20,
 			20,
 			980,
 			980);
 	});
+var _jamonholmgren$rocket_elm$Ship$initShip = {x: 500, y: 500, d: 0, s: 2.0, ts: 10.0, acc: 0.0, turn: 0.0, hp: 100, cooldown: 0, cooldownMax: 6, firing: false};
 var _jamonholmgren$rocket_elm$Smoke$smokeView = function (smoke) {
 	var sa = _elm_lang$core$Basics$toString(smoke.alpha);
 	var ss = _elm_lang$core$Basics$toString(smoke.size);
@@ -9485,6 +9495,7 @@ var _jamonholmgren$rocket_elm$Smoke$tickSmokes = F2(
 			_jamonholmgren$rocket_elm$Smoke$tickSmoke(diff),
 			smokes);
 	});
+var _jamonholmgren$rocket_elm$Smoke$initSmoke = {x: 0, y: 0, size: 10.0, alpha: 1.0};
 var _jamonholmgren$rocket_elm$Smoke$Smoke = F4(
 	function (a, b, c, d) {
 		return {x: a, y: b, size: c, alpha: d};
@@ -9558,7 +9569,18 @@ var _jamonholmgren$rocket_elm$Main$view = function (model) {
 var _jamonholmgren$rocket_elm$Main$addSmoke = function (_p0) {
 	var _p1 = _p0;
 	return (_elm_lang$core$Native_Utils.cmp(_p1.acc, 0) > 0) ? _elm_lang$core$Maybe$Just(
-		{x: _p1.x, y: _p1.y, size: 10.0, alpha: 0.75}) : _elm_lang$core$Maybe$Nothing;
+		_elm_lang$core$Native_Utils.update(
+			_jamonholmgren$rocket_elm$Smoke$initSmoke,
+			{x: _p1.x, y: _p1.y})) : _elm_lang$core$Maybe$Nothing;
+};
+var _jamonholmgren$rocket_elm$Main$fireBullets = function (ship) {
+	return (ship.firing && _elm_lang$core$Native_Utils.eq(ship.cooldown, 0)) ? _elm_lang$core$Native_List.fromArray(
+		[
+			_elm_lang$core$Native_Utils.update(
+			_jamonholmgren$rocket_elm$Bullet$initBullet,
+			{x: ship.x, y: ship.y, d: ship.d, friendly: true})
+		]) : _elm_lang$core$Native_List.fromArray(
+		[]);
 };
 var _jamonholmgren$rocket_elm$Main$removeKey = F2(
 	function (k, keys) {
@@ -9587,83 +9609,67 @@ var _jamonholmgren$rocket_elm$Main$accKey = function (keys) {
 var _jamonholmgren$rocket_elm$Main$turnKey = function (keys) {
 	return A2(_jamonholmgren$rocket_elm$Main_ops['??'], keys, 'A') ? -1.0 : (A2(_jamonholmgren$rocket_elm$Main_ops['??'], keys, 'D') ? 1.0 : 0.0);
 };
-var _jamonholmgren$rocket_elm$Main$fireBullet = F3(
-	function (keys, bullets, ship) {
-		if (_elm_lang$core$Native_Utils.eq(ship.reload, 0) && A2(_jamonholmgren$rocket_elm$Main_ops['??'], keys, 'J')) {
-			var newBullets = A2(
-				_elm_lang$core$List_ops['::'],
-				{x: ship.x, y: ship.y, d: ship.d, s: 15, ts: 15, acc: 0, turn: 0, friendly: true},
-				bullets);
-			return {
-				ctor: '_Tuple2',
-				_0: newBullets,
-				_1: _elm_lang$core$Native_Utils.update(
-					ship,
-					{reload: 10})
-			};
-		} else {
-			return {ctor: '_Tuple2', _0: bullets, _1: ship};
-		}
-	});
+var _jamonholmgren$rocket_elm$Main$firingKey = function (keys) {
+	return A2(_jamonholmgren$rocket_elm$Main_ops['??'], keys, 'J');
+};
 var _jamonholmgren$rocket_elm$Main$update = F2(
 	function (msg, _p2) {
 		var _p3 = _p2;
-		var _p10 = _p3.smokes;
-		var _p9 = _p3.ship;
-		var _p8 = _p3;
-		var _p7 = _p3.keys;
-		var _p6 = _p3.enemies;
+		var _p9 = _p3.smokes;
+		var _p8 = _p3.ship;
+		var _p7 = _p3;
+		var _p6 = _p3.keys;
+		var _p5 = _p3.enemies;
 		var _p4 = msg;
 		switch (_p4.ctor) {
 			case 'Frame':
+				var newBullets = A2(
+					_elm_lang$core$Basics_ops['++'],
+					_p3.bullets,
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						_jamonholmgren$rocket_elm$Main$fireBullets(_p8),
+						A2(_elm_lang$core$List$concatMap, _jamonholmgren$rocket_elm$Main$fireBullets, _p5)));
+				var newShip = _elm_lang$core$Native_Utils.update(
+					_p8,
+					{
+						acc: _jamonholmgren$rocket_elm$Main$accKey(_p6),
+						turn: _jamonholmgren$rocket_elm$Main$turnKey(_p6),
+						firing: _jamonholmgren$rocket_elm$Main$firingKey(_p6)
+					});
 				var diff = _p4._0 / 30;
-				var s = A2(
-					_jamonholmgren$rocket_elm$Ship$tickShip,
-					diff,
-					_elm_lang$core$Native_Utils.update(
-						_p9,
-						{
-							acc: _jamonholmgren$rocket_elm$Main$accKey(_p7),
-							turn: _jamonholmgren$rocket_elm$Main$turnKey(_p7)
-						}));
-				var b = A2(_jamonholmgren$rocket_elm$Bullet$tickBullets, diff, _p3.bullets);
-				var _p5 = A3(_jamonholmgren$rocket_elm$Main$fireBullet, _p7, b, s);
-				var newBullets = _p5._0;
-				var newShip = _p5._1;
-				var newSmokes = A2(_jamonholmgren$rocket_elm$Smoke$tickSmokes, diff, _p10);
-				var newEnemies = A2(_jamonholmgren$rocket_elm$Enemy$tickEnemies, diff, _p6);
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
-						_p8,
-						{ship: newShip, bullets: newBullets, smokes: newSmokes, enemies: newEnemies}),
+						_p7,
+						{
+							ship: A2(_jamonholmgren$rocket_elm$Ship$tickShip, diff, newShip),
+							bullets: A2(_jamonholmgren$rocket_elm$Bullet$tickBullets, diff, newBullets),
+							smokes: A2(_jamonholmgren$rocket_elm$Smoke$tickSmokes, diff, _p9),
+							enemies: A2(_jamonholmgren$rocket_elm$Enemy$tickEnemies, diff, _p5)
+						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'AITick':
 				var newEnemies = A2(
 					_elm_lang$core$List$map,
-					function (e) {
-						return _elm_lang$core$Native_Utils.update(
-							e,
-							{targetX: _p9.x, targetY: _p9.y});
-					},
-					_p6);
-				var ns = A2(
-					_elm_lang$core$List$append,
-					_p10,
-					A2(_elm_lang$core$List$filterMap, _jamonholmgren$rocket_elm$Main$addSmoke, newEnemies));
+					_jamonholmgren$rocket_elm$Enemy$enemyAI(_p8),
+					_p5);
 				var newSmokes = A2(
-					_elm_lang$core$List$append,
-					ns,
+					_elm_lang$core$Basics_ops['++'],
+					_p9,
 					A2(
-						_elm_lang$core$List$filterMap,
-						_jamonholmgren$rocket_elm$Main$addSmoke,
-						_elm_lang$core$Native_List.fromArray(
-							[_p9])));
+						_elm_lang$core$Basics_ops['++'],
+						A2(_elm_lang$core$List$filterMap, _jamonholmgren$rocket_elm$Main$addSmoke, newEnemies),
+						A2(
+							_elm_lang$core$List$filterMap,
+							_jamonholmgren$rocket_elm$Main$addSmoke,
+							_elm_lang$core$Native_List.fromArray(
+								[_p8]))));
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
-						_p8,
+						_p7,
 						{smokes: newSmokes, enemies: newEnemies}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
@@ -9671,9 +9677,9 @@ var _jamonholmgren$rocket_elm$Main$update = F2(
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
-						_p8,
+						_p7,
 						{
-							keys: A2(_jamonholmgren$rocket_elm$Main$addKey, _p4._0, _p7)
+							keys: A2(_jamonholmgren$rocket_elm$Main$addKey, _p4._0, _p6)
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
@@ -9681,32 +9687,33 @@ var _jamonholmgren$rocket_elm$Main$update = F2(
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
-						_p8,
+						_p7,
 						{
-							keys: A2(_jamonholmgren$rocket_elm$Main$removeKey, _p4._0, _p7)
+							keys: A2(_jamonholmgren$rocket_elm$Main$removeKey, _p4._0, _p6)
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 		}
 	});
-var _jamonholmgren$rocket_elm$Main$initEnemy = {x: 100, y: 100, d: 0, s: 5.0, ts: 10.0, acc: 0.0, turn: 0.0, hp: 10, reload: 0, targetX: 500, targetY: 500};
-var _jamonholmgren$rocket_elm$Main$initShip = {x: 500, y: 500, d: 0, s: 2.0, ts: 10.0, acc: 0.0, turn: 0.0, hp: 100, reload: 0};
 var _jamonholmgren$rocket_elm$Main$init = function () {
+	var insaneEnemy = _elm_lang$core$Native_Utils.update(
+		_jamonholmgren$rocket_elm$Enemy$initEnemy,
+		{x: 500, y: 900, ts: 40});
 	var slowEnemy = _elm_lang$core$Native_Utils.update(
-		_jamonholmgren$rocket_elm$Main$initEnemy,
+		_jamonholmgren$rocket_elm$Enemy$initEnemy,
 		{x: 100, y: 500, ts: 4});
 	var mediumEnemy = _elm_lang$core$Native_Utils.update(
-		_jamonholmgren$rocket_elm$Main$initEnemy,
+		_jamonholmgren$rocket_elm$Enemy$initEnemy,
 		{x: 100, y: 100, ts: 7});
 	var fastEnemy = _elm_lang$core$Native_Utils.update(
-		_jamonholmgren$rocket_elm$Main$initEnemy,
+		_jamonholmgren$rocket_elm$Enemy$initEnemy,
 		{x: 900, y: 500, ts: 9});
 	var enemies = _elm_lang$core$Native_List.fromArray(
-		[fastEnemy, mediumEnemy, slowEnemy]);
+		[fastEnemy, mediumEnemy, slowEnemy, insaneEnemy]);
 	return {
 		ctor: '_Tuple2',
 		_0: {
-			ship: _jamonholmgren$rocket_elm$Main$initShip,
+			ship: _jamonholmgren$rocket_elm$Ship$initShip,
 			bullets: _elm_lang$core$Native_List.fromArray(
 				[]),
 			smokes: _elm_lang$core$Native_List.fromArray(
@@ -9734,7 +9741,7 @@ var _jamonholmgren$rocket_elm$Main$AITick = function (a) {
 var _jamonholmgren$rocket_elm$Main$Frame = function (a) {
 	return {ctor: 'Frame', _0: a};
 };
-var _jamonholmgren$rocket_elm$Main$subscriptions = function (_p11) {
+var _jamonholmgren$rocket_elm$Main$subscriptions = function (_p10) {
 	return _elm_lang$core$Platform_Sub$batch(
 		_elm_lang$core$Native_List.fromArray(
 			[
