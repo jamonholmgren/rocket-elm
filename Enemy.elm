@@ -1,4 +1,4 @@
-module Enemy exposing (Enemy, tickEnemies, enemyViews)
+module Enemy exposing (Enemy, tickEnemies, enemyAI, enemyViews, initEnemy)
 import Mover exposing (Mover, tickMover, moverView)
 import Trig exposing (targetDirection, turnDirection)
 
@@ -15,11 +15,26 @@ import Svg exposing (g)
 type alias Enemy =
   Mover
     { hp : Int
-    , reload : Int
-    , targetX : Float
-    , targetY : Float
+    , firing : Bool
+    , cooldown : Int
+    , cooldownMax : Int
     }
 
+
+initEnemy : Enemy
+initEnemy =
+  { x = 100
+  , y = 100
+  , d = 0
+  , s = 5.0
+  , ts = 10.0 -- Top speed
+  , acc = 0.0
+  , turn = 0.0
+  , hp = 10
+  , firing = False
+  , cooldown = 0
+  , cooldownMax = 12
+  }
 
 -- Take a list of enemies and "tick" them (make them move
 -- forward, etc). If a enemy is out of bounds, we remove it
@@ -34,27 +49,31 @@ tickEnemies diff enemies =
 tickEnemy : Time -> Enemy -> Enemy
 tickEnemy diff enemy =
   tickMover diff { enemy
-                 | reload = weaponCooldown(enemy.reload)
+                 | cooldown = (weaponCooldown enemy)
                  } -100 -100 1100 1100
-                 |> targetStrategy
 
 
-targetStrategy : Enemy -> Enemy
-targetStrategy ({x, y, d, targetX, targetY} as enemy) =
+enemyAI : { b | x : Float, y : Float } -> Enemy -> Enemy
+enemyAI ({x, y}) e =
   let
-    td = targetDirection (x - targetX) (y - targetY)
-    dir = turnDirection td d
-    a = if dir == 0 then 1 else -1
+    td = targetDirection (e.x - x) (e.y - y)
+    dir = turnDirection td e.d
+    a = if dir == 0 then 1 else -0.25
+    f = if dir == 0 then True else False
   in
-    { enemy
+    { e
     | turn = dir
     , acc = a
+    , firing = f
     }
 
--- Cooldown a weapon from max 100 down to cooled 0.
-weaponCooldown : Int -> Int
-weaponCooldown r =
-  clamp 0 100 (r - 1)
+-- Cooldown a weapon from cooldownMax down to cooled 0.
+weaponCooldown : Enemy -> Int
+weaponCooldown {cooldown, cooldownMax, firing} =
+  if cooldown == 0 && firing then
+    cooldownMax
+  else
+    clamp 0 cooldownMax (cooldown - 1)
 
 
 -- Renders all enemies from a list of enemies.

@@ -1,4 +1,4 @@
-module Smoke exposing (Smoke, tickSmokes, smokeViews)
+module Smoke exposing (Smoke, tickSmokes, smokeViews, initSmoke)
 
 -- Smoke is a module that represents smoke clouds from rockets
 -- and jets and smoke firing.
@@ -14,6 +14,15 @@ type alias Smoke =
   , y : Float
   , size : Float
   , alpha : Float
+  }
+
+
+initSmoke : Smoke
+initSmoke =
+  { x = 0
+  , y = 0
+  , size = 10.0
+  , alpha = 1.0
   }
 
 
