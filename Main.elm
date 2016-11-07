@@ -13,9 +13,9 @@ import Enemy exposing (Enemy, tickEnemies, enemyAI, enemyViews, initEnemy)
 
 -- import Trig exposing (targetDistance, targetDirection, turnDirection)
 
-import Html exposing (Html, div, p, text)
+import Html exposing (Html, div, p, text, a)
 import Html.App as App
-import Html.Attributes exposing (style)
+import Html.Attributes exposing (style, href, target)
 import Svg exposing (svg, rect, image)
 import Svg.Attributes exposing (x, y, viewBox, fill, width, height, xlinkHref)
 import Time exposing (Time, millisecond)
@@ -240,6 +240,7 @@ debugView : Model -> Html msg
 debugView model =
   div []
     [ p [] [ text "WASD to fly, J to fire bullets" ]
+    , a [ href "https://github.com/jamonholmgren/rocket-elm", target "_blank" ] [ text "Github Source" ]
     -- , p [] [ text (toString model) ]
     ]
 
