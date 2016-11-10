@@ -2,14 +2,15 @@
 
 ![rocket-elm](https://cloud.githubusercontent.com/assets/1479215/20043836/541bbb34-a450-11e6-8812-71c91165a00b.gif)
 
-
 Pilot a little rocket ship around an SVG canvas using WASD, pursued by enemy ships powered by AI. Press J to fire bullets.
+
+There are two apps -- an Elm front-end and an Elixir API for multiplayer support.
 
 ## Getting Started
 
 ```sh-session
 $ git clone git@github.com:jamonholmgren/rocket-elm.git
-$ cd rocket-elm
+$ cd rocket-elm/elm-app
 $ elm-reactor
 ```
 
@@ -21,6 +22,7 @@ Visit http://localhost:8000/ and click on `Main.elm`.
 * [ ] Collision detection for bullets
 * [ ] Enemy ships blow up when killed
 * [ ] My ship blows up when killed, and then the game resets
+* [ ] Multiplayer support
 * [ ] come up with more cool todos...
 
 ### License
