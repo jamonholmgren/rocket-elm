@@ -26,7 +26,7 @@ collisionDetection ({ship, bullets, enemies} as model) =
     }
 
 collided : Bullet -> Ship -> Bool
-collided bullet ship = --({x, y, size}) ({x as bx, y as by, size as bsize}) =
+collided bullet ship =
   let
     s = ship.size / 2
     bs = bullet.size / 2
@@ -35,13 +35,13 @@ collided bullet ship = --({x, y, size}) ({x as bx, y as by, size as bsize}) =
   in
     axisAlignedBoundingBox shipRect bulletRect
 
-notCollided : Bullet -> Ship -> Bool
-notCollided bullet ship =
-  not (collided bullet ship)
+anyCollisions : List Ship -> Bullet -> Bool
+anyCollisions enemies bullet =
+  List.all (not << collided bullet) enemies
 
 checkCollision : List Enemy -> List Bullet -> (List Enemy, List Bullet)
 checkCollision enemies bullets =
   let
-    newBullets = List.filter (\b -> List.all (notCollided b) enemies) bullets
+    newBullets = List.filter (anyCollisions enemies) bullets
   in
     (enemies, newBullets)
