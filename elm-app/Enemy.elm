@@ -28,6 +28,7 @@ initEnemy =
   , d = 0
   , s = 5.0
   , ts = 10.0 -- Top speed
+  , size = 20
   , acc = 0.0
   , turn = 0.0
   , hp = 10

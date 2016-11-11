@@ -25,6 +25,7 @@ initShip =
   , y = 500
   , d = 0
   , s = 2.0
+  , size = 40
   , ts = 10.0 -- Top speed
   , acc = 0.0
   , turn = 0.0

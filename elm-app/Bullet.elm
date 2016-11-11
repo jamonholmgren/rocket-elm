@@ -14,7 +14,7 @@ import Svg exposing (g)
 -- Bullet is a Mover that also has a "friendly" flag.
 -- If a bullet is "friendly", it won't hit you.
 type alias Bullet =
-  Mover { friendly : Bool }
+  Mover { friendly : Bool, impacted : Bool }
 
 
 initBullet : Bullet
@@ -24,9 +24,11 @@ initBullet =
   , d = 0
   , s = 20
   , ts = 20
+  , size = 1
   , acc = 0
   , turn = 0
   , friendly = True
+  , impacted = False
   }
 
 -- Take a list of bullets and "tick" them (make them move

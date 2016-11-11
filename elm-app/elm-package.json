@@ -4,7 +4,8 @@
     "repository": "https://github.com/jamonholmgren/rocket-elm.git",
     "license": "MIT",
     "source-directories": [
-        "."
+        ".",
+        "./vendor"
     ],
     "exposed-modules": [],
     "dependencies": {

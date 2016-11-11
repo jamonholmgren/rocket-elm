@@ -10,8 +10,7 @@ import Ship exposing (Ship, tickShip, shipView, initShip)
 import Bullet exposing (Bullet, tickBullets, bulletViews, initBullet)
 import Smoke exposing (Smoke, tickSmokes, smokeViews, initSmoke)
 import Enemy exposing (Enemy, tickEnemies, enemyAI, enemyViews, initEnemy)
-
--- import Trig exposing (targetDistance, targetDirection, turnDirection)
+import Collision exposing (collisionDetection)
 
 import Html exposing (Html, div, p, text, a)
 import Html.App as App
@@ -52,10 +51,10 @@ type alias Model =
 init : ( Model, Cmd Msg )
 init =
   let
-    fastEnemy = { initEnemy | x = 900, y = 500, ts = 9 }
-    mediumEnemy = { initEnemy | x = 100, y = 100, ts = 7 }
-    slowEnemy = { initEnemy | x = 100, y = 500, ts = 4 }
-    insaneEnemy = { initEnemy | x = 500, y = 900, ts = 40 }
+    fastEnemy = { initEnemy | x = 900, y = 500, ts = 2 }
+    mediumEnemy = { initEnemy | x = 100, y = 100, ts = 2 }
+    slowEnemy = { initEnemy | x = 100, y = 500, ts = 2 }
+    insaneEnemy = { initEnemy | x = 500, y = 900, ts = 2 }
     enemies = [ fastEnemy, mediumEnemy, slowEnemy, insaneEnemy ]
   in
     ( { ship = initShip
@@ -105,7 +104,7 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
           , bullets = (tickBullets diff newBullets)
           , smokes =  (tickSmokes diff smokes)
           , enemies = (tickEnemies diff enemies)
-          }
+          } |> collisionDetection
         , Cmd.none)
 
     AITick _ ->
