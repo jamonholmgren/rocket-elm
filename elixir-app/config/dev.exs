@@ -11,20 +11,13 @@ config :rocket, Rocket.Endpoint,
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
-  watchers: [node: ["node_modules/brunch/bin/brunch", "watch", "--stdin",
-                    cd: Path.expand("../", __DIR__)]]
+  watchers: [] #node: ["node_modules/brunch/bin/brunch", "watch", "--stdin",
+               #      cd: Path.expand("../", __DIR__)]]
 
 
 # Watch static and templates for browser reloading.
 config :rocket, Rocket.Endpoint,
-  live_reload: [
-    patterns: [
-      ~r{priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$},
-      ~r{priv/gettext/.*(po)$},
-      ~r{web/views/.*(ex)$},
-      ~r{web/templates/.*(eex)$}
-    ]
-  ]
+  live_reload: [ patterns: [] ]
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
@@ -34,10 +27,10 @@ config :logger, :console, format: "[$level] $message\n"
 config :phoenix, :stacktrace_depth, 20
 
 # Configure your database
-config :rocket, Rocket.Repo,
-  adapter: Ecto.Adapters.Postgres,
-  username: "postgres",
-  password: "postgres",
-  database: "rocket_dev",
-  hostname: "localhost",
-  pool_size: 10
+# config :rocket, Rocket.Repo,
+#   adapter: Ecto.Adapters.Postgres,
+#   username: "postgres",
+#   password: "postgres",
+#   database: "rocket_dev",
+#   hostname: "localhost",
+#   pool_size: 10

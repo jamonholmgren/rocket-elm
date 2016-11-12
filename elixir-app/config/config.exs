@@ -7,7 +7,7 @@ use Mix.Config
 
 # General application configuration
 config :rocket,
-  ecto_repos: [Rocket.Repo]
+  ecto_repos: [] # Rocket.Repo
 
 # Configures the endpoint
 config :rocket, Rocket.Endpoint,

@@ -9,7 +9,7 @@ defmodule Rocket do
     # Define workers and child supervisors to be supervised
     children = [
       # Start the Ecto repository
-      supervisor(Rocket.Repo, []),
+      # supervisor(Rocket.Repo, []),
       # Start the endpoint when the application starts
       supervisor(Rocket.Endpoint, []),
       # Start your own worker by calling: Rocket.Worker.start_link(arg1, arg2, arg3)

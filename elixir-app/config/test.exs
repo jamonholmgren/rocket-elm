@@ -10,10 +10,10 @@ config :rocket, Rocket.Endpoint,
 config :logger, level: :warn
 
 # Configure your database
-config :rocket, Rocket.Repo,
-  adapter: Ecto.Adapters.Postgres,
-  username: "postgres",
-  password: "postgres",
-  database: "rocket_test",
-  hostname: "localhost",
-  pool: Ecto.Adapters.SQL.Sandbox
+# config :rocket, Rocket.Repo,
+#   adapter: Ecto.Adapters.Postgres,
+#   username: "postgres",
+#   password: "postgres",
+#   database: "rocket_test",
+#   hostname: "localhost",
+#   pool: Ecto.Adapters.SQL.Sandbox
