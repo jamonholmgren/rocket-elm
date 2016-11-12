@@ -3,6 +3,7 @@ defmodule Rocket.UserSocket do
 
   ## Channels
   # channel "room:*", Rocket.RoomChannel
+  channel "world:game", Rocket.WorldChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket

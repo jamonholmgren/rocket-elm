@@ -12,6 +12,10 @@ import Smoke exposing (Smoke, tickSmokes, smokeViews, initSmoke)
 import Enemy exposing (Enemy, tickEnemies, enemyAI, enemyViews, initEnemy)
 import Collision exposing (collisionDetection)
 
+-- Multiplayer support
+import Server
+
+-- Other modules
 import Html exposing (Html, div, p, text, a)
 import Html.App as App
 import Html.Attributes exposing (style, href, target)
@@ -44,6 +48,7 @@ type alias Model =
   , enemies : List Enemy
   , score : Int
   , keys : Set String
+  , socket : Server.Socket Msg
   }
 
 
@@ -63,16 +68,17 @@ init =
       , enemies = enemies
       , score = 0
       , keys = Set.empty
+      , socket = Server.socketInit
       }, Cmd.none )
 
 -- UPDATE
 
--- We respond to keyboard events and tick every n milliseconds.
 type Msg
   = Frame Time
   | AITick Time
   | KeyDownMsg Keyboard.KeyCode
   | KeyUpMsg Keyboard.KeyCode
+  | PhoenixMsg (Server.Msg Msg)
 
 -- Our all-powerful update function.
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -130,6 +136,22 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
     KeyUpMsg k ->
       -- Only thing we do here is remove a key from our set of current keys.
       ({ model | keys = (removeKey k keys) }, Cmd.none)
+
+    PhoenixMsg msg ->
+      let
+        ( socket, phxCmd ) = Server.update msg model.socket
+      in
+        ( { model | socket = socket }
+        , Cmd.map PhoenixMsg phxCmd
+        )
+    --
+    -- UpdateServer ->
+    --   let
+    --     (socket, phxCmd) = Server.pushToSocket model.socket "Test"
+    --   in
+    --     ( { model | socket = socket }
+    --     , Cmd.map PhoenixMsg phxCmd
+    --     )
 
 
 -- Check if a key is being pressed
@@ -201,12 +223,13 @@ addSmoke {acc, x, y} =
 -- We subscribe to three types of events. One is a time tick of every 30 ms.
 -- The other two are keyboard -- keys pushed and keys released.
 subscriptions : Model -> Sub Msg
-subscriptions _ =
+subscriptions model =
   Sub.batch
     [ AnimationFrame.diffs Frame
     , Time.every (100 * millisecond) AITick
     , Keyboard.downs KeyDownMsg
     , Keyboard.ups KeyUpMsg
+    , Server.listen model.socket PhoenixMsg
     ]
 
 
