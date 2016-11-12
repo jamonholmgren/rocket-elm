@@ -13,7 +13,9 @@ import Enemy exposing (Enemy, tickEnemies, enemyAI, enemyViews, initEnemy)
 import Collision exposing (collisionDetection)
 
 -- Multiplayer support
-import Server
+import Phoenix.Socket as PS exposing (Socket)
+import Phoenix.Push as Push
+import Json.Encode as JE
 
 -- Other modules
 import Html exposing (Html, div, p, text, a)
@@ -48,7 +50,7 @@ type alias Model =
   , enemies : List Enemy
   , score : Int
   , keys : Set String
-  , socket : Server.Socket Msg
+  , socket : PS.Socket Msg
   }
 
 
@@ -68,7 +70,7 @@ init =
       , enemies = enemies
       , score = 0
       , keys = Set.empty
-      , socket = Server.socketInit
+      , socket = socketInit
       }, Cmd.none )
 
 -- UPDATE
@@ -78,7 +80,9 @@ type Msg
   | AITick Time
   | KeyDownMsg Keyboard.KeyCode
   | KeyUpMsg Keyboard.KeyCode
-  | PhoenixMsg (Server.Msg Msg)
+  | PhoenixMsg (PS.Msg Msg)
+  | UpdateServer JE.Value
+  | ReceiveWorldUpdate JE.Value
 
 -- Our all-powerful update function.
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -139,19 +143,22 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
 
     PhoenixMsg msg ->
       let
-        ( socket, phxCmd ) = Server.update msg model.socket
+        ( socket, phxCmd ) = PS.update msg model.socket
       in
         ( { model | socket = socket }
         , Cmd.map PhoenixMsg phxCmd
         )
-    --
-    -- UpdateServer ->
-    --   let
-    --     (socket, phxCmd) = Server.pushToSocket model.socket "Test"
-    --   in
-    --     ( { model | socket = socket }
-    --     , Cmd.map PhoenixMsg phxCmd
-    --     )
+
+    UpdateServer json ->
+      let
+        (socket, phxCmd) = pushToSocket model.socket "Test"
+      in
+        ( { model | socket = socket }
+        , Cmd.map PhoenixMsg phxCmd
+        )
+
+    ReceiveWorldUpdate json ->
+      (model, Cmd.none)
 
 
 -- Check if a key is being pressed
@@ -229,8 +236,28 @@ subscriptions model =
     , Time.every (100 * millisecond) AITick
     , Keyboard.downs KeyDownMsg
     , Keyboard.ups KeyUpMsg
-    , Server.listen model.socket PhoenixMsg
+    , PS.listen model.socket PhoenixMsg
     ]
+
+
+-- Multiplayer
+
+socketInit : Socket Msg
+socketInit =
+  "ws://localhost:4000/socket/websocket"
+  |> PS.init
+  |> PS.withDebug
+  |> PS.on "new:msg" "world:game" ReceiveWorldUpdate
+
+
+pushToSocket : PS.Socket Msg -> String -> (PS.Socket Msg, Cmd (PS.Msg Msg))
+pushToSocket socket payload =
+  let
+    payloadJSON = (JE.object [("payload", JE.string payload)])
+    cargo = Push.init "new:msg" "world:game"
+            |> Push.withPayload payloadJSON
+  in
+    PS.push cargo socket
 
 
 -- VIEW
