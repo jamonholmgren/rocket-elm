@@ -9,4 +9,9 @@ defmodule Rocket.Router do
     plug :put_secure_browser_headers
   end
 
+  # socket "/ws", Rocket, via: [Phoenix.Transports.WebSocket] do
+  #   channel "test:xyz", WorldChannel
+  # end
+
+
 end

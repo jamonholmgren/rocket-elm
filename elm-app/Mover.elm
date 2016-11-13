@@ -19,6 +19,7 @@ type alias Mover a =
   , d : Float         -- direction
   , s : Float         -- speed
   , size : Float      -- size for hitbox
+  , hp : Int          -- hit points
   , ts : Float        -- top speed
   , acc : Float       -- accelerating -1 0 1
   , turn : Float      -- turning -1 0 1

@@ -14,8 +14,7 @@ import Svg exposing (g)
 -- Enemy is a Mover that also has hp and a weapon cooldown reload.
 type alias Enemy =
   Mover
-    { hp : Int
-    , firing : Bool
+    { firing : Bool
     , cooldown : Int
     , cooldownMax : Int
     }

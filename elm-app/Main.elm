@@ -13,7 +13,8 @@ import Enemy exposing (Enemy, tickEnemies, enemyAI, enemyViews, initEnemy)
 import Collision exposing (collisionDetection)
 
 -- Multiplayer support
-import Phoenix.Socket as PS exposing (Socket)
+import Phoenix.Socket as Socket exposing (Socket)
+import Phoenix.Channel as Channel
 import Phoenix.Push as Push
 import Json.Encode as JE
 
@@ -44,13 +45,14 @@ main =
 -- MODEL
 -- Represents the whole "world" we're working with.
 type alias Model =
-  { ship : Ship
+  { game : Maybe String
+  , ship : Ship
   , bullets : List Bullet
   , smokes : List Smoke
   , enemies : List Enemy
   , score : Int
   , keys : Set String
-  , socket : PS.Socket Msg
+  , socket : Socket.Socket Msg
   }
 
 
@@ -64,14 +66,15 @@ init =
     insaneEnemy = { initEnemy | x = 500, y = 900, ts = 2 }
     enemies = [ fastEnemy, mediumEnemy, slowEnemy, insaneEnemy ]
   in
-    ( { ship = initShip
+    ( { game = Nothing
+      , ship = initShip
       , bullets = []
       , smokes = []
       , enemies = enemies
       , score = 0
       , keys = Set.empty
       , socket = socketInit
-      }, Cmd.none )
+      }, Cmd.none)
 
 -- UPDATE
 
@@ -80,9 +83,13 @@ type Msg
   | AITick Time
   | KeyDownMsg Keyboard.KeyCode
   | KeyUpMsg Keyboard.KeyCode
-  | PhoenixMsg (PS.Msg Msg)
+  | JoinedGame JE.Value
+  | LeftGame JE.Value
+  | PhoenixMsg (Socket.Msg Msg)
   | UpdateServer JE.Value
   | ReceiveWorldUpdate JE.Value
+  | SocketResponse JE.Value
+  | SocketError JE.Value
 
 -- Our all-powerful update function.
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -122,16 +129,19 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
         -- Retarget toward our ship
         newEnemies =  List.map (enemyAI ship) enemies
 
-        -- Add smoke if accelerating, either our ship or the enemies
+        -- Add smoke if low HP, either our ship or the enemies
         newSmokes = smokes ++ (List.filterMap addSmoke newEnemies) ++ (List.filterMap addSmoke [ship])
 
+        -- Push update to server
+        -- (socket, phxMsg) = pushToSocket model.socket "Testing!!!"
+        -- a = Debug.log "socket" model.socket
       in
         -- New model
         ({ model
             | smokes = newSmokes
             , enemies = newEnemies
-        }, Cmd.none)
-
+            -- , socket = socket
+        }, Cmd.none) -- map PhoenixMsg phxMsg)
 
     KeyDownMsg k ->
       -- Only thing we do here is add a key to our set of current keys.
@@ -141,16 +151,55 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
       -- Only thing we do here is remove a key from our set of current keys.
       ({ model | keys = (removeKey k keys) }, Cmd.none)
 
+    JoinedGame game ->
+      let
+        a = Debug.log "JoinedGame" game
+      in
+        (model, Cmd.none)
+
+    LeftGame game ->
+      let
+        a = Debug.log "LeftGame" game
+      in
+        (model, Cmd.none)
+
+    SocketResponse wat ->
+      let
+        a = Debug.log "SocketResponse" wat
+      in
+        (model, Cmd.none)
+
+    SocketError wat ->
+      let
+        a = Debug.log "SocketError" wat
+      in
+        (model, Cmd.none)
+
     PhoenixMsg msg ->
       let
-        ( socket, phxCmd ) = PS.update msg model.socket
+        -- a = Debug.log "PhoenixMsg" msg
+        ( socket, phxCmd ) = Socket.update msg model.socket
       in
         ( { model | socket = socket }
         , Cmd.map PhoenixMsg phxCmd
         )
 
+
+    -- JoinGame game ->
+    --   let
+    --     a = Debug.log game
+    --     channel = Channel.init game
+    --               -- |> Channel.onJoin (always (ShowJoinedMessage "rooms:lobby"))
+    --               -- |> Channel.onClose (always (ShowLeftMessage "rooms:lobby"))
+    --     ( socket, phxCmd ) = Socket.join channel model.socket
+    --   in
+    --     ( { model | socket = socket }
+    --     , Cmd.map PhoenixMsg phxCmd
+    --     )
+
     UpdateServer json ->
       let
+        a = Debug.log "UpdateServer" json
         (socket, phxCmd) = pushToSocket model.socket "Test"
       in
         ( { model | socket = socket }
@@ -158,7 +207,10 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
         )
 
     ReceiveWorldUpdate json ->
-      (model, Cmd.none)
+      let
+        a = Debug.log "Received world update" json
+      in
+        (model, Cmd.none)
 
 
 -- Check if a key is being pressed
@@ -218,8 +270,8 @@ fireBullets ship =
     []
 
 addSmoke : Mover a -> Maybe Smoke
-addSmoke {acc, x, y} =
-  if acc > 0 then
+addSmoke {hp, x, y} =
+  if hp <= 5 then
     Just  { initSmoke | x = x, y = y }
   else
     Nothing
@@ -236,7 +288,7 @@ subscriptions model =
     , Time.every (100 * millisecond) AITick
     , Keyboard.downs KeyDownMsg
     , Keyboard.ups KeyUpMsg
-    , PS.listen model.socket PhoenixMsg
+    , Socket.listen model.socket PhoenixMsg
     ]
 
 
@@ -244,20 +296,31 @@ subscriptions model =
 
 socketInit : Socket Msg
 socketInit =
-  "ws://localhost:4000/socket/websocket"
-  |> PS.init
-  |> PS.withDebug
-  |> PS.on "new:msg" "world:game" ReceiveWorldUpdate
+  let
+    sock =  "ws://localhost:4000/socket/websocket"
+            |> Socket.init
+            |> Socket.withDebug
+            |> Socket.on "update" "world:game" ReceiveWorldUpdate
 
+    channel = "world:game"
+              |> Channel.init
+              |> Channel.onJoin (\c -> JoinedGame c)
+              |> Channel.onClose (\c -> LeftGame c)
 
-pushToSocket : PS.Socket Msg -> String -> (PS.Socket Msg, Cmd (PS.Msg Msg))
+    (socket, _) = Socket.join channel sock
+  in
+    socket
+
+pushToSocket : Socket.Socket Msg -> String -> (Socket.Socket Msg, Cmd (Socket.Msg Msg))
 pushToSocket socket payload =
   let
     payloadJSON = (JE.object [("payload", JE.string payload)])
-    cargo = Push.init "new:msg" "world:game"
+    cargo = Push.init "update" "world:game"
             |> Push.withPayload payloadJSON
+            |> Push.onOk SocketResponse
+            |> Push.onError SocketError
   in
-    PS.push cargo socket
+    (Socket.push cargo socket)
 
 
 -- VIEW

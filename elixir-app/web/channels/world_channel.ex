@@ -1,22 +1,18 @@
 defmodule Rocket.WorldChannel do
   use Rocket.Web, :channel
 
-  # def join("world:game", payload, socket) do
-  #   IO.puts "Connected with #{payload}."
-  #   if authorized?(payload) do
-  #     {:ok, socket}
-  #   else
-  #     {:error, %{reason: "unauthorized"}}
-  #   end
-  # end
-
-  def join(chan, payload, socket) do
-    IO.puts "Connected to #{chan} with #{payload}."
+  def join("world:game", payload, socket) do
+    IO.puts "Connected to world:game with #{payload}."
     if authorized?(payload) do
       {:ok, socket}
     else
       {:error, %{reason: "unauthorized"}}
     end
+  end
+
+  def join("room:" <> room, _params, _socket) do
+    IO.puts "Error joining #{room}."
+    {:error, %{reason: "unauthorized"}}
   end
 
   # Channels can be used in a request/response fashion
@@ -28,7 +24,7 @@ defmodule Rocket.WorldChannel do
 
   # It is also common to receive messages from the client and
   # broadcast to everyone in the current topic (world:game).
-  def handle_in("shout", payload, socket) do
+  def handle_in("update", payload, socket) do
     IO.puts "Shouted to #{socket} with #{payload}."
     broadcast socket, "shout", payload
     {:noreply, socket}

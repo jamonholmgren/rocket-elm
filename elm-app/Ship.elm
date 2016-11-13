@@ -12,8 +12,7 @@ import Html exposing (Html)
 -- Ship is a Mover that also has hp and a weapon cooldown cooldown.
 type alias Ship =
   Mover
-    { hp : Int
-    , cooldown : Int
+    { cooldown : Int
     , cooldownMax : Int
     , firing : Bool
     }
