@@ -19,9 +19,10 @@ import Phoenix.Push as Push
 import Json.Encode as JE
 
 -- Other modules
-import Html exposing (Html, div, p, text, a)
+import Html exposing (Html, div, p, text, a, button)
 import Html.App as App
 import Html.Attributes exposing (style, href, target)
+import Html.Events exposing (onClick)
 import Svg exposing (svg, rect, image)
 import Svg.Attributes exposing (x, y, viewBox, fill, width, height, xlinkHref)
 import Time exposing (Time, millisecond)
@@ -53,7 +54,22 @@ type alias Model =
   , score : Int
   , keys : Set String
   , socket : Socket.Socket Msg
+  , connected : Bool
   }
+
+type Msg
+  = Frame Time
+  | AITick Time
+  | KeyDownMsg Keyboard.KeyCode
+  | KeyUpMsg Keyboard.KeyCode
+  | JoinGame
+  | JoinedGame JE.Value
+  | LeftGame JE.Value
+  | PhoenixMsg (Socket.Msg Msg)
+  | ReceiveWorldUpdate JE.Value
+  | SocketResponse JE.Value
+  | SocketError JE.Value
+
 
 
 -- Creates the initial world with default values.
@@ -64,7 +80,7 @@ init =
     mediumEnemy = { initEnemy | x = 100, y = 100, ts = 2 }
     slowEnemy = { initEnemy | x = 100, y = 500, ts = 2 }
     insaneEnemy = { initEnemy | x = 500, y = 900, ts = 2 }
-    enemies = [ fastEnemy, mediumEnemy, slowEnemy, insaneEnemy ]
+    enemies = [] -- [ fastEnemy, mediumEnemy, slowEnemy, insaneEnemy ]
   in
     ( { game = Nothing
       , ship = initShip
@@ -74,22 +90,10 @@ init =
       , score = 0
       , keys = Set.empty
       , socket = socketInit
+      , connected = False
       }, Cmd.none)
 
 -- UPDATE
-
-type Msg
-  = Frame Time
-  | AITick Time
-  | KeyDownMsg Keyboard.KeyCode
-  | KeyUpMsg Keyboard.KeyCode
-  | JoinedGame JE.Value
-  | LeftGame JE.Value
-  | PhoenixMsg (Socket.Msg Msg)
-  | UpdateServer JE.Value
-  | ReceiveWorldUpdate JE.Value
-  | SocketResponse JE.Value
-  | SocketError JE.Value
 
 -- Our all-powerful update function.
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -133,15 +137,15 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
         newSmokes = smokes ++ (List.filterMap addSmoke newEnemies) ++ (List.filterMap addSmoke [ship])
 
         -- Push update to server
-        -- (socket, phxMsg) = pushToSocket model.socket "Testing!!!"
+        (socket, phxMsg) = updateServer model
         -- a = Debug.log "socket" model.socket
       in
         -- New model
-        ({ model
-            | smokes = newSmokes
-            , enemies = newEnemies
-            -- , socket = socket
-        }, Cmd.none) -- map PhoenixMsg phxMsg)
+        ( { model
+          | smokes = newSmokes
+          , enemies = newEnemies
+          , socket = socket
+          }, Cmd.map PhoenixMsg phxMsg)
 
     KeyDownMsg k ->
       -- Only thing we do here is add a key to our set of current keys.
@@ -152,16 +156,10 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
       ({ model | keys = (removeKey k keys) }, Cmd.none)
 
     JoinedGame game ->
-      let
-        a = Debug.log "JoinedGame" game
-      in
-        (model, Cmd.none)
+      ({model | connected = True}, Cmd.none)
 
     LeftGame game ->
-      let
-        a = Debug.log "LeftGame" game
-      in
-        (model, Cmd.none)
+      ({model | connected = False}, Cmd.none)
 
     SocketResponse wat ->
       let
@@ -177,7 +175,7 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
 
     PhoenixMsg msg ->
       let
-        -- a = Debug.log "PhoenixMsg" msg
+        a = Debug.log "PhoenixMsg" msg
         ( socket, phxCmd ) = Socket.update msg model.socket
       in
         ( { model | socket = socket }
@@ -185,22 +183,13 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
         )
 
 
-    -- JoinGame game ->
-    --   let
-    --     a = Debug.log game
-    --     channel = Channel.init game
-    --               -- |> Channel.onJoin (always (ShowJoinedMessage "rooms:lobby"))
-    --               -- |> Channel.onClose (always (ShowLeftMessage "rooms:lobby"))
-    --     ( socket, phxCmd ) = Socket.join channel model.socket
-    --   in
-    --     ( { model | socket = socket }
-    --     , Cmd.map PhoenixMsg phxCmd
-    --     )
-
-    UpdateServer json ->
+    JoinGame ->
       let
-        a = Debug.log "UpdateServer" json
-        (socket, phxCmd) = pushToSocket model.socket "Test"
+        game = Debug.log "topic" "world:game"
+        channel = Channel.init game
+                  |> Channel.onJoin JoinedGame
+                  |> Channel.onClose LeftGame
+        ( socket, phxCmd ) = Socket.join channel model.socket
       in
         ( { model | socket = socket }
         , Cmd.map PhoenixMsg phxCmd
@@ -296,20 +285,36 @@ subscriptions model =
 
 socketInit : Socket Msg
 socketInit =
+  "ws://localhost:4000/socket/websocket"
+  |> Socket.init
+  |> Socket.on "update" "world:game" ReceiveWorldUpdate
+
+
+updateServer : Model -> (Socket.Socket Msg, Cmd (Socket.Msg Msg))
+updateServer model =
   let
-    sock =  "ws://localhost:4000/socket/websocket"
-            |> Socket.init
-            |> Socket.withDebug
-            |> Socket.on "update" "world:game" ReceiveWorldUpdate
-
-    channel = "world:game"
-              |> Channel.init
-              |> Channel.onJoin (\c -> JoinedGame c)
-              |> Channel.onClose (\c -> LeftGame c)
-
-    (socket, _) = Socket.join channel sock
+    -- payload will include:
+    -- time: time payload was generated, for fast-forwarding reasons
+    -- ship: updates on my ship position
+    -- nb: any new bullets that have been created recently
+    -- ib: any of my bullets that have impacted something recently (and what they hit)
+    -- Everything else will be handled client-side!
+    payload = "ship:ID,x,y,d,hp,acc,turn,hp;nb:ID,x,y,d,s;nb:ID,x,y,d,s;nb:ID:x,y,d,s;ib:ID,x,y"
   in
-    socket
+    pushToSocket model.socket payload
+
+handleServerUpdate : Model -> String -> Model
+handleServerUpdate model payload =
+  let
+    -- update single ships by id, including HP
+    -- add new bullets
+    -- impact bullets, reduce HP of other ships accordingly
+    -- tick everything forward by time delta since payload was generated
+    newShip = model.ship
+  in
+    { model
+    | ship = newShip
+    }
 
 pushToSocket : Socket.Socket Msg -> String -> (Socket.Socket Msg, Cmd (Socket.Msg Msg))
 pushToSocket socket payload =
@@ -320,7 +325,7 @@ pushToSocket socket payload =
             |> Push.onOk SocketResponse
             |> Push.onError SocketError
   in
-    (Socket.push cargo socket)
+    Socket.push cargo socket
 
 
 -- VIEW
@@ -329,10 +334,16 @@ pushToSocket socket payload =
 -- Render a div with the game box and debug info.
 view : Model -> Html Msg
 view model =
+  let
+    mainView = if model.connected then
+                 gameView model
+               else
+                 button [onClick JoinGame] [ text "Join" ]
+
+    views = [ mainView, debugView model ]
+  in
   div [ width "1000px", height "1000px", style [("margin", "50px 50px"), ("text-align", "center")] ]
-    [ gameView model
-    , debugView model
-    ]
+    views
 
 
 -- Game box, built out of SVG nodes.

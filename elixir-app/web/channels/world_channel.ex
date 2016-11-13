@@ -2,7 +2,8 @@ defmodule Rocket.WorldChannel do
   use Rocket.Web, :channel
 
   def join("world:game", payload, socket) do
-    IO.puts "Connected to world:game with #{payload}."
+    IO.puts "Connected to world:game."
+    IO.inspect payload
     if authorized?(payload) do
       {:ok, socket}
     else
@@ -10,7 +11,7 @@ defmodule Rocket.WorldChannel do
     end
   end
 
-  def join("room:" <> room, _params, _socket) do
+  def join(room, _params, _socket) do
     IO.puts "Error joining #{room}."
     {:error, %{reason: "unauthorized"}}
   end

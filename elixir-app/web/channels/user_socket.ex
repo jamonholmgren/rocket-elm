@@ -4,10 +4,11 @@ defmodule Rocket.UserSocket do
   ## Channels
   # channel "room:*", Rocket.RoomChannel
   channel "world:game", Rocket.WorldChannel
+  channel "rooms:lobby", Rocket.WorldChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket
-  # transport :longpoll, Phoenix.Transports.LongPoll
+  transport :longpoll, Phoenix.Transports.LongPoll
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After
