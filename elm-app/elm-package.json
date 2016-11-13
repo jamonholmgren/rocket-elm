@@ -7,8 +7,10 @@
         ".",
         "./vendor"
     ],
+    "native-modules": false,
     "exposed-modules": [],
     "dependencies": {
+        "danyx23/elm-uuid": "2.0.1 <= v < 3.0.0",
         "elm-lang/animation-frame": "1.0.0 <= v < 2.0.0",
         "elm-lang/core": "4.0.5 <= v < 5.0.0",
         "elm-lang/html": "1.1.0 <= v < 2.0.0",

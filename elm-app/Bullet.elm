@@ -9,6 +9,7 @@ import Mover exposing (Mover, tickMover, moverView)
 import Time exposing (Time)
 import Html exposing (Html)
 import Svg exposing (g)
+-- import Native.Uuid exposing (generateUUID)
 
 
 -- Bullet is a Mover that also has a "friendly" flag.
@@ -24,6 +25,7 @@ initBullet =
   , d = 0
   , s = 20
   , ts = 20
+  , hp = 1
   , size = 1
   , acc = 0
   , turn = 0

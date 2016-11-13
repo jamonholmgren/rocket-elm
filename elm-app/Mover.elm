@@ -1,5 +1,6 @@
 module Mover exposing (Mover, tickMover, moverView)
 import Trig exposing (xDelta, yDelta, normalize)
+-- import Uuid exposing (Uuid)
 
 -- Mover is a generic item that has a position, direction, speed,
 -- and can accelerate or turn.
@@ -10,6 +11,7 @@ import Trig exposing (xDelta, yDelta, normalize)
 import Html exposing (Html)
 import Svg exposing (image)
 import Svg.Attributes exposing (x, y, width, height, xlinkHref, transform)
+-- import Time exposing (Time)
 
 
 type alias Mover a =
