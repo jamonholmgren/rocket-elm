@@ -47,6 +47,7 @@ main =
 -- Represents the whole "world" we're working with.
 type alias Model =
   { game : Maybe String
+  , id : Maybe Int
   , ship : Ship
   , bullets : List Bullet
   , smokes : List Smoke
@@ -67,6 +68,8 @@ type Msg
   | LeftGame JE.Value
   | PhoenixMsg (Socket.Msg Msg)
   | ReceiveWorldUpdate JE.Value
+  | ReceiveUserEntered JE.Value
+  | ReceiveUserId JE.Value
   | SocketResponse JE.Value
   | SocketError JE.Value
 
@@ -83,6 +86,7 @@ init =
     enemies = [] -- [ fastEnemy, mediumEnemy, slowEnemy, insaneEnemy ]
   in
     ( { game = Nothing
+      , id = Nothing
       , ship = initShip
       , bullets = []
       , smokes = []
@@ -196,10 +200,22 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
         )
 
     ReceiveWorldUpdate json ->
+      -- let
+      --   a = Debug.log "Received world update" json
+      -- in
+        (model, Cmd.none)
+
+    ReceiveUserEntered json ->
       let
-        a = Debug.log "Received world update" json
+        a = Debug.log "Received user entered" json
       in
         (model, Cmd.none)
+
+    ReceiveUserId json ->
+      let
+        id = Just 12
+      in
+        ({model | id = id}, Cmd.none)
 
 
 -- Check if a key is being pressed
@@ -288,6 +304,8 @@ socketInit =
   "ws://localhost:4000/socket/websocket"
   |> Socket.init
   |> Socket.on "update" "world:game" ReceiveWorldUpdate
+  |> Socket.on "user:id" "world:game" ReceiveUserId
+  |> Socket.on "user:entered" "world:game" ReceiveUserEntered
 
 
 updateServer : Model -> (Socket.Socket Msg, Cmd (Socket.Msg Msg))
@@ -299,7 +317,7 @@ updateServer model =
     -- nb: any new bullets that have been created recently
     -- ib: any of my bullets that have impacted something recently (and what they hit)
     -- Everything else will be handled client-side!
-    payload = "ship:ID,x,y,d,hp,acc,turn,hp;nb:ID,x,y,d,s;nb:ID,x,y,d,s;nb:ID:x,y,d,s;ib:ID,x,y"
+    payload = "ship:ID,x,y,d,hp,acc,turn,hp;nb:ID,x,y,d,s;nb:ID,x,y,d,s;nb:ID:x,y,d,s;ib:ID,x,y,shipID"
   in
     pushToSocket model.socket payload
 
@@ -310,6 +328,7 @@ handleServerUpdate model payload =
     -- add new bullets
     -- impact bullets, reduce HP of other ships accordingly
     -- tick everything forward by time delta since payload was generated
+    a = Debug.log payload
     newShip = model.ship
   in
     { model

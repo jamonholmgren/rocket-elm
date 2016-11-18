@@ -14,7 +14,8 @@ import Svg exposing (g)
 -- Enemy is a Mover that also has hp and a weapon cooldown reload.
 type alias Enemy =
   Mover
-    { firing : Bool
+    { id : Maybe Int
+    , firing : Bool
     , cooldown : Int
     , cooldownMax : Int
     }
@@ -22,7 +23,8 @@ type alias Enemy =
 
 initEnemy : Enemy
 initEnemy =
-  { x = 100
+  { id = Nothing
+  , x = 100
   , y = 100
   , d = 0
   , s = 5.0
@@ -54,7 +56,14 @@ tickEnemy diff enemy =
 
 
 enemyAI : { b | x : Float, y : Float } -> Enemy -> Enemy
-enemyAI ({x, y}) e =
+enemyAI ship ({ id } as enemy) =
+  if id == Nothing then
+    doEnemyAI ship enemy
+  else
+    enemy
+
+doEnemyAI : { b | x : Float, y : Float } -> Enemy -> Enemy
+doEnemyAI ({x, y}) e =
   let
     td = targetDirection (e.x - x) (e.y - y)
     dir = turnDirection td e.d
