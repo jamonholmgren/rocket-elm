@@ -5,7 +5,7 @@ module Main exposing (..)
 -- Learning Elm by trial and fire and lots of mistakes.
 -- License is MIT.
 
-import Mover exposing (Mover)
+import Mover exposing (Mover, MoverUpdate)
 import Ship exposing (Ship, tickShip, shipView, initShip)
 import Bullet exposing (Bullet, tickBullets, bulletViews, initBullet)
 import Smoke exposing (Smoke, tickSmokes, smokeViews, initSmoke)
@@ -17,10 +17,11 @@ import Phoenix.Socket as Socket exposing (Socket)
 import Phoenix.Channel as Channel
 import Phoenix.Push as Push
 import Json.Encode as JE
+import Regex exposing (HowMany, regex)
+import Array exposing (Array)
 
 -- Other modules
 import Html exposing (Html, div, p, text, a, button)
-import Html.App as App
 import Html.Attributes exposing (style, href, target)
 import Html.Events exposing (onClick)
 import Svg exposing (svg, rect, image)
@@ -33,9 +34,9 @@ import String exposing (fromChar)
 import Set exposing (Set)
 
 
-main : Program Never
+main : Program Never Model Msg
 main =
-  App.program
+  Html.program
     { init = init
     , view = view
     , update = update
@@ -69,11 +70,8 @@ type Msg
   | PhoenixMsg (Socket.Msg Msg)
   | ReceiveWorldUpdate JE.Value
   | ReceiveUserEntered JE.Value
-  | ReceiveUserId JE.Value
   | SocketResponse JE.Value
   | SocketError JE.Value
-
-
 
 -- Creates the initial world with default values.
 init : ( Model, Cmd Msg )
@@ -119,7 +117,7 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
 
         newBullets = bullets
                      ++ (fireBullets ship)
-                     ++ ((List.concatMap fireBullets) enemies)
+                     ++ ((List.concatMap fireBulletsEnemy) enemies)
       in
         -- New model with updated ship and list of bullets.
         -- All of the "ticks" happen as we construct this final
@@ -166,20 +164,20 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
       ({model | connected = False}, Cmd.none)
 
     SocketResponse wat ->
-      let
-        a = Debug.log "SocketResponse" wat
-      in
+      -- let
+      --   a = Debug.log "SocketResponse" wat
+      -- in
         (model, Cmd.none)
 
     SocketError wat ->
-      let
-        a = Debug.log "SocketError" wat
-      in
+      -- let
+        -- a = Debug.log "SocketError" wat
+      -- in
         (model, Cmd.none)
 
     PhoenixMsg msg ->
       let
-        a = Debug.log "PhoenixMsg" msg
+        -- a = Debug.log "PhoenixMsg" msg
         ( socket, phxCmd ) = Socket.update msg model.socket
       in
         ( { model | socket = socket }
@@ -200,22 +198,20 @@ update msg ({ ship, bullets, smokes, keys, enemies } as model) =
         )
 
     ReceiveWorldUpdate json ->
-      -- let
-      --   a = Debug.log "Received world update" json
-      -- in
-        (model, Cmd.none)
+      let
+        a = Debug.log "Received world update" json
+      in
+        ((handleServerUpdate model (extractPayload (toString json))), Cmd.none)
 
     ReceiveUserEntered json ->
       let
-        a = Debug.log "Received user entered" json
+        userId = Just (extractUserId (toString json))
       in
-        (model, Cmd.none)
-
-    ReceiveUserId json ->
-      let
-        id = Just 12
-      in
-        ({model | id = id}, Cmd.none)
+        if model.id == Nothing then
+          -- This is me! Yay!
+          ({model | id = userId}, Cmd.none)
+        else
+          (model, Cmd.none)
 
 
 -- Check if a key is being pressed
@@ -274,6 +270,18 @@ fireBullets ship =
   else
     []
 
+fireBulletsEnemy : Enemy -> List Bullet
+fireBulletsEnemy enemy =
+  if (enemy.firing && enemy.cooldown == 0) then
+    [ { initBullet
+      | x = enemy.x
+      , y = enemy.y
+      , d = enemy.d
+      , friendly = False
+    } ]
+  else
+    []
+
 addSmoke : Mover a -> Maybe Smoke
 addSmoke {hp, x, y} =
   if hp <= 5 then
@@ -284,17 +292,25 @@ addSmoke {hp, x, y} =
 
 -- SUBSCRIPTIONS
 
--- We subscribe to three types of events. One is a time tick of every 30 ms.
+-- We subscribe to a few different types of events.
+-- AnimationFrame pushes a tick every frame for drawing
+-- The AITick is for updating things that don't need to happen as often, like AI
+-- intentions.
+-- We listen to a socket connection so we can communicate to the server.
 -- The other two are keyboard -- keys pushed and keys released.
+-- Before we launch the game, our only subscription is to the socket connection.
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Sub.batch
-    [ AnimationFrame.diffs Frame
-    , Time.every (100 * millisecond) AITick
-    , Keyboard.downs KeyDownMsg
-    , Keyboard.ups KeyUpMsg
-    , Socket.listen model.socket PhoenixMsg
-    ]
+  if model.connected then
+    Sub.batch
+      [ AnimationFrame.diffs Frame
+      , Time.every (100 * millisecond) AITick
+      , Keyboard.downs KeyDownMsg
+      , Keyboard.ups KeyUpMsg
+      , Socket.listen model.socket PhoenixMsg
+      ]
+  else
+    Socket.listen model.socket PhoenixMsg
 
 
 -- Multiplayer
@@ -304,12 +320,11 @@ socketInit =
   "ws://localhost:4000/socket/websocket"
   |> Socket.init
   |> Socket.on "update" "world:game" ReceiveWorldUpdate
-  |> Socket.on "user:id" "world:game" ReceiveUserId
   |> Socket.on "user:entered" "world:game" ReceiveUserEntered
 
 
 updateServer : Model -> (Socket.Socket Msg, Cmd (Socket.Msg Msg))
-updateServer model =
+updateServer ({ship} as model) =
   let
     -- payload will include:
     -- time: time payload was generated, for fast-forwarding reasons
@@ -317,23 +332,113 @@ updateServer model =
     -- nb: any new bullets that have been created recently
     -- ib: any of my bullets that have impacted something recently (and what they hit)
     -- Everything else will be handled client-side!
-    payload = "ship:ID,x,y,d,hp,acc,turn,hp;nb:ID,x,y,d,s;nb:ID,x,y,d,s;nb:ID:x,y,d,s;ib:ID,x,y,shipID"
+    shipUpdate = [ ship.x
+                 , ship.y
+                 , ship.d
+                 , toFloat ship.hp
+                 , ship.acc
+                 , ship.turn
+                 ]
+                 |> List.map round
+                 |> List.map toString
+                 |> String.join ","
+
+    clientId = (toString (Maybe.withDefault 0 model.id))
+
+    payload = clientId ++ "," ++ shipUpdate
+            -- ++ "nb:ID,x,y,d,s;nb:ID,x,y,d,s;nb:ID:x,y,d,s;ib:ID,x,y,shipID"
   in
     pushToSocket model.socket payload
 
-handleServerUpdate : Model -> String -> Model
+handleServerUpdate : Model -> MoverUpdate -> Model
 handleServerUpdate model payload =
   let
     -- update single ships by id, including HP
     -- add new bullets
     -- impact bullets, reduce HP of other ships accordingly
     -- tick everything forward by time delta since payload was generated
-    a = Debug.log payload
-    newShip = model.ship
+
+    -- We are now getting
+
+    a = Debug.log "Server pushed update" payload
+    newEnemies =
+      if model.id == Just payload.id then
+        -- My own update, no change
+        model.enemies
+      else
+        -- Check if there is no enemy with that ID first
+        if List.any (\en -> en.id == Just payload.id) model.enemies then
+          -- Enemy update, let's update it
+          model.enemies
+          |> List.map (\en ->
+            if en.id == Just payload.id then
+              { en
+              | x = payload.x
+              , y = payload.y
+              , d = payload.d
+              , hp = payload.hp
+              , acc = payload.acc
+              , turn = payload.turn
+              }
+            else
+              en
+          )
+        else
+          -- New enemy sighting!
+          { initEnemy
+          | id = Just payload.id
+          , x = payload.x
+          , y = payload.y
+          , d = payload.d
+          , hp = payload.hp
+          , acc = payload.acc
+          , turn = payload.turn
+          } :: model.enemies
   in
     { model
-    | ship = newShip
+    | enemies = newEnemies
     }
+
+-- Okay, this is very hacky. I really just need the ID from this JSON response
+-- and apparently the way it's supposed to happen is I have to write 25 lines of
+-- decoder logic. Until I actually find the time to figure that out, I'm just
+-- going to coerce it into a string and then pull the int out manually.
+-- ¯\_(ツ)_/¯
+-- "{ user = 83531997, payload = {} }"
+extractUserId : String -> Int
+extractUserId str =
+  str
+  |> Regex.replace Regex.All (regex "{ user = ") (\_ -> "")
+  |> String.split ","
+  |> List.head    |> Maybe.withDefault "0" -- Have to do this to resolve potential errors
+  |> String.toInt |> Result.withDefault 0
+
+extractPayload : String -> MoverUpdate
+extractPayload str =
+  let
+    data = str
+           |> Regex.replace Regex.All (regex "{ payload = \"") (\_ -> "")
+           |> Regex.replace Regex.All (regex "\" }") (\_ -> "")
+           |> String.split ","
+           |> List.map String.toFloat
+           |> List.map (Result.withDefault 0.0)
+           |> Array.fromList
+  in
+    { id = round (item 0 data)
+    , x = item 1 data
+    , y = item 2 data
+    , d = item 3 data
+    , hp = round (item 4 data)
+    , acc = item 5 data
+    , turn = item 6 data
+    }
+
+item : Int -> Array Float -> Float
+item index data =
+  data
+  |> Array.get index
+  |> Maybe.withDefault -1.0
+
 
 pushToSocket : Socket.Socket Msg -> String -> (Socket.Socket Msg, Cmd (Socket.Msg Msg))
 pushToSocket socket payload =

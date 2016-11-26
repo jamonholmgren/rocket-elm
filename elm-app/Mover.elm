@@ -1,4 +1,4 @@
-module Mover exposing (Mover, tickMover, moverView)
+module Mover exposing (Mover, MoverUpdate, tickMover, moverView)
 import Trig exposing (xDelta, yDelta, normalize)
 -- import Uuid exposing (Uuid)
 
@@ -27,6 +27,15 @@ type alias Mover a =
   , turn : Float      -- turning -1 0 1
   }
 
+type alias MoverUpdate =
+  { id : Int
+  , x : Float
+  , y : Float
+  , d : Float
+  , hp : Int
+  , acc : Float
+  , turn : Float
+  }
 
 tickMover : Float -> Mover a -> Float -> Float -> Float -> Float -> Mover a
 tickMover timeDiff mover x1 y1 x2 y2 =
