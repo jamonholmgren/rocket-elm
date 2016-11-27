@@ -42,6 +42,7 @@ anyCollisions enemies bullet =
 checkCollision : List Enemy -> List Bullet -> (List Enemy, List Bullet)
 checkCollision enemies bullets =
   let
+    -- TODO: Mark collided bullets as having impacted with an enemy (and which one)
     newBullets = List.filter (anyCollisions enemies) bullets
   in
     (enemies, newBullets)

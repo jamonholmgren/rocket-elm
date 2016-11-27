@@ -70,8 +70,8 @@ type Msg
   | PhoenixMsg (Socket.Msg Msg)
   | ReceiveWorldUpdate JE.Value
   | ReceiveUserEntered JE.Value
-  | SocketResponse JE.Value
-  | SocketError JE.Value
+  -- | SocketResponse JE.Value
+  -- | SocketError JE.Value
 
 -- Creates the initial world with default values.
 init : ( Model, Cmd Msg )
@@ -99,120 +99,101 @@ init =
 
 -- Our all-powerful update function.
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ({ ship, bullets, smokes, keys, enemies } as model) =
+update msg model =
   case msg of
-    Frame timeDiff ->
-      let
-        -- Normalize the time diff based on normal FPS vs current FPS
-        diff = timeDiff / 30
+    Frame timeDiff -> frameUpdate timeDiff model
+    AITick _ -> aiTickUpdate model
+    KeyDownMsg k -> ({ model | keys = (addKey k model.keys) }, Cmd.none)
+    KeyUpMsg k -> ({ model | keys = (removeKey k model.keys) }, Cmd.none)
+    JoinedGame game -> ({model | connected = True}, Cmd.none)
+    LeftGame game -> ({model | connected = False}, Cmd.none)
+    PhoenixMsg msg -> phoenixUpdate msg model
+    JoinGame -> joinGameUpdate model
+    ReceiveWorldUpdate json -> worldUpdate json model
+    ReceiveUserEntered json -> userEnteredUpdate json model
 
-        -- Update the ship to properly represent current user commands.
-        -- For example, if we're holding "W", then we want ship.acc = 1.0
-        -- Or if we're holding "A", we want ship.turn = -1.0
-        newShip = { ship
-                  | acc = (accKey keys)
-                  , turn = (turnKey keys)
-                  , firing = (firingKey keys)
-                  }
+worldUpdate : JE.Value -> Model -> ( Model, Cmd Msg )
+worldUpdate json model =
+  ((handleServerUpdate model (extractPayload (toString json))), Cmd.none)
 
-        newBullets = bullets
-                     ++ (fireBullets ship)
-                     ++ ((List.concatMap fireBulletsEnemy) enemies)
-      in
-        -- New model with updated ship and list of bullets.
-        -- All of the "ticks" happen as we construct this final
-        -- model record.
-        ( { model
-          | ship =    (tickShip diff newShip)
-          , bullets = (tickBullets diff newBullets)
-          , smokes =  (tickSmokes diff smokes)
-          , enemies = (tickEnemies diff enemies)
-          } |> collisionDetection
-        , Cmd.none)
+userEnteredUpdate : JE.Value -> Model -> ( Model, Cmd Msg )
+userEnteredUpdate json model =
+  let
+    userId = Just (extractUserId (toString json))
+  in
+    if model.id == Nothing then
+      -- This is me! Yay!
+      ({model | id = userId}, Cmd.none)
+    else
+      (model, Cmd.none)
 
-    AITick _ ->
-      let
-        -- Retarget toward our ship
-        newEnemies =  List.map (enemyAI ship) enemies
+joinGameUpdate : Model -> ( Model, Cmd Msg )
+joinGameUpdate model =
+  let
+    game = Debug.log "topic" "world:game"
+    channel = Channel.init game
+              |> Channel.onJoin JoinedGame
+              |> Channel.onClose LeftGame
+    ( socket, phxCmd ) = Socket.join channel model.socket
+  in
+    ( { model | socket = socket }, Cmd.map PhoenixMsg phxCmd )
 
-        -- Add smoke if low HP, either our ship or the enemies
-        newSmokes = smokes ++ (List.filterMap addSmoke newEnemies) ++ (List.filterMap addSmoke [ship])
+phoenixUpdate : Socket.Msg Msg -> Model -> ( Model, Cmd Msg )
+phoenixUpdate msg model =
+  let
+    ( socket, phxCmd ) = Socket.update msg model.socket
+  in
+    ( { model | socket = socket } , Cmd.map PhoenixMsg phxCmd )
 
-        -- Push update to server
-        (socket, phxMsg) = updateServer model
-        -- a = Debug.log "socket" model.socket
-      in
-        -- New model
-        ( { model
-          | smokes = newSmokes
-          , enemies = newEnemies
-          , socket = socket
-          }, Cmd.map PhoenixMsg phxMsg)
+frameUpdate : Float -> Model -> ( Model, Cmd Msg )
+frameUpdate timeDiff ({ ship, bullets, smokes, keys, enemies } as model) =
+  let
+    -- Normalize the time diff based on normal FPS vs current FPS
+    diff = timeDiff / 30
 
-    KeyDownMsg k ->
-      -- Only thing we do here is add a key to our set of current keys.
-      ({ model | keys = (addKey k keys) }, Cmd.none)
+    -- Update the ship to properly represent current user commands.
+    -- For example, if we're holding "W", then we want ship.acc = 1.0
+    -- Or if we're holding "A", we want ship.turn = -1.0
+    newShip = { ship
+              | acc = (accKey keys)
+              , turn = (turnKey keys)
+              , firing = (firingKey keys)
+              }
 
-    KeyUpMsg k ->
-      -- Only thing we do here is remove a key from our set of current keys.
-      ({ model | keys = (removeKey k keys) }, Cmd.none)
+    newBullets = bullets
+                 ++ (fireBullets ship)
+                 ++ ((List.concatMap fireBulletsEnemy) enemies)
+  in
+    -- New model with updated ship and list of bullets.
+    -- All of the "ticks" happen as we construct this final
+    -- model record.
+    ( { model
+      | ship =    (tickShip diff newShip)
+      , bullets = (tickBullets diff newBullets)
+      , smokes =  (tickSmokes diff smokes)
+      , enemies = (tickEnemies diff enemies)
+      } |> collisionDetection
+    , Cmd.none)
 
-    JoinedGame game ->
-      ({model | connected = True}, Cmd.none)
+aiTickUpdate : Model -> ( Model, Cmd Msg )
+aiTickUpdate ({ ship, smokes, enemies } as model) =
+  let
+    -- Retarget toward our ship
+    newEnemies =  List.map (enemyAI ship) enemies
 
-    LeftGame game ->
-      ({model | connected = False}, Cmd.none)
+    -- Add smoke if low HP, either our ship or the enemies
+    newSmokes = smokes ++ (List.filterMap addSmoke newEnemies) ++ (List.filterMap addSmoke [ship])
 
-    SocketResponse wat ->
-      -- let
-      --   a = Debug.log "SocketResponse" wat
-      -- in
-        (model, Cmd.none)
-
-    SocketError wat ->
-      -- let
-        -- a = Debug.log "SocketError" wat
-      -- in
-        (model, Cmd.none)
-
-    PhoenixMsg msg ->
-      let
-        -- a = Debug.log "PhoenixMsg" msg
-        ( socket, phxCmd ) = Socket.update msg model.socket
-      in
-        ( { model | socket = socket }
-        , Cmd.map PhoenixMsg phxCmd
-        )
-
-
-    JoinGame ->
-      let
-        game = Debug.log "topic" "world:game"
-        channel = Channel.init game
-                  |> Channel.onJoin JoinedGame
-                  |> Channel.onClose LeftGame
-        ( socket, phxCmd ) = Socket.join channel model.socket
-      in
-        ( { model | socket = socket }
-        , Cmd.map PhoenixMsg phxCmd
-        )
-
-    ReceiveWorldUpdate json ->
-      let
-        a = Debug.log "Received world update" json
-      in
-        ((handleServerUpdate model (extractPayload (toString json))), Cmd.none)
-
-    ReceiveUserEntered json ->
-      let
-        userId = Just (extractUserId (toString json))
-      in
-        if model.id == Nothing then
-          -- This is me! Yay!
-          ({model | id = userId}, Cmd.none)
-        else
-          (model, Cmd.none)
-
+    -- Push update to server
+    (socket, phxMsg) = updateServer model
+    -- a = Debug.log "socket" model.socket
+  in
+    -- New model
+    ( { model
+      | smokes = newSmokes
+      , enemies = newEnemies
+      , socket = socket
+      }, Cmd.map PhoenixMsg phxMsg)
 
 -- Check if a key is being pressed
 -- Usage: if keys ?? "D" then
@@ -446,8 +427,8 @@ pushToSocket socket payload =
     payloadJSON = (JE.object [("payload", JE.string payload)])
     cargo = Push.init "update" "world:game"
             |> Push.withPayload payloadJSON
-            |> Push.onOk SocketResponse
-            |> Push.onError SocketError
+            -- |> Push.onOk SocketResponse
+            -- |> Push.onError SocketError
   in
     Socket.push cargo socket
 
@@ -466,8 +447,8 @@ view model =
 
     views = [ mainView, debugView model ]
   in
-  div [ width "1000px", height "1000px", style [("margin", "50px 50px"), ("text-align", "center")] ]
-    views
+    div [ width "1000px", height "1000px", style [("margin", "50px 50px"), ("text-align", "center")] ]
+      views
 
 
 -- Game box, built out of SVG nodes.
